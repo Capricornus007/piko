@@ -62,6 +62,105 @@ internal data class NavBarItemContentTarget(
     val tabIconFields: Map<String, FieldReference>,
 )
 
+private data class MergedLambdaKey(
+    val definingClass: String,
+    val name: String,
+    val parameterTypes: List<String>,
+)
+
+context(context: BytecodePatchContext)
+private fun resolveNavBarItemContentFromMergedLambda(
+    key: MergedLambdaKey,
+    renderer: ImmutableMethodReference,
+    rendererDescriptor: String,
+    tabData: NewXNavBarTabData,
+): NavBarItemContentTarget {
+    val consumerClassDef = context.mutableClassDefBy(key.definingClass)
+    val originalMethod =
+        requireExactlyOne(
+            "NewX navigation bar item merged lambda ${key.definingClass}->${key.name}",
+            consumerClassDef.methods.filter { method ->
+                method.name == key.name &&
+                    method.parameterTypes.map(CharSequence::toString) == key.parameterTypes
+            },
+        ) { it.toString() }
+    val navigationField =
+        originalMethod.resolveCapturedNavigationField(tabData.navigationType)
+            ?: throw PatchException(
+                "NewX navigation bar item captured navigation field was not resolved: $originalMethod",
+            )
+
+    // The compiler reuses parameter registers for the icon and the resolved label, so the receiver
+    // cannot be read at the convergence point. One extra local preserves the receiver for the whole
+    // method; cloneMutable copies the original parameters before shifting them.
+    val originalRegisterCount =
+        originalMethod.implementation?.registerCount
+            ?: throw PatchException("NewX navigation bar item content has no implementation: $originalMethod")
+    val consumerMethod =
+        originalMethod.cloneMutable(
+            additionalRegisters = originalMethod.numberOfParameterRegisters + 1,
+        )
+    consumerClassDef.methods.remove(originalMethod)
+    consumerClassDef.methods.add(consumerMethod)
+
+    val rendererCallIndices =
+        consumerMethod.instructions.mapIndexedNotNull { index, instruction ->
+            index.takeIf { instruction.referencesMethod(rendererDescriptor) }
+        }
+    val rendererCallIndex =
+        requireExactlyOne("NewX navigation bar item renderer call", rendererCallIndices) { it.toString() }
+    val rendererCall =
+        consumerMethod.instructions.getOrNull(rendererCallIndex) as? Instruction35c
+            ?: throw PatchException("NewX navigation bar item renderer call is not a 5-register invoke")
+    val iconRegister = rendererCall.registerC
+    val labelRegister = rendererCall.registerD
+    val tabDataValueRegister = rendererCall.registerE
+
+    return NavBarItemContentTarget(
+        method = consumerMethod,
+        navigationField = navigationField,
+        iconType = renderer.parameterTypes.first().toString(),
+        tabDataValueType = tabData.tabDataValueType,
+        rendererCallIndex = rendererCallIndex,
+        iconRegister = iconRegister,
+        labelRegister = labelRegister,
+        tabDataValueRegister = tabDataValueRegister,
+        thisRegister = originalRegisterCount,
+        tabIconFields = consumerMethod.resolveNavigationTabIcons(tabData.navigationType, iconRegister),
+    )
+}
+
+/**
+ * The merged lambda captures the navigation enum in an Object field. The item branch check-casts
+ * the field read to the navigation type, so walking back from that cast — skipping intermediate
+ * casts on the same shared register from unrelated branches — resolves the captured field without
+ * relying on constructor parameter positions.
+ */
+private fun Method.resolveCapturedNavigationField(navigationType: String): FieldReference? {
+    val methodInstructions = implementation?.instructions?.toList() ?: return null
+    methodInstructions.forEachIndexed { index, instruction ->
+        if (instruction.opcode != Opcode.CHECK_CAST) return@forEachIndexed
+        val castRegister = (instruction as? OneRegisterInstruction)?.registerA ?: return@forEachIndexed
+        if (instruction.getReference<TypeReference>()?.toString() != navigationType) return@forEachIndexed
+        for (cursor in index - 1 downTo 0) {
+            val candidate = methodInstructions[cursor]
+            if (candidate.opcode == Opcode.CHECK_CAST &&
+                (candidate as? OneRegisterInstruction)?.registerA == castRegister
+            ) {
+                // An unrelated branch cast the same shared register to a different type.
+                continue
+            }
+            if (candidate.destinationRegisterOrNull() != castRegister) continue
+            if (candidate.opcode == Opcode.IGET_OBJECT) {
+                return candidate.getReference<FieldReference>()
+            }
+            return null
+        }
+        return null
+    }
+    return null
+}
+
 /** Resolved NewX navigation tab data shared by all navigation bar patches. */
 internal data class NewXNavBarTabData(
     val navigationType: String,
@@ -416,6 +515,40 @@ internal fun resolveNavBarItemContent(tabData: NewXNavBarTabData): NavBarItemCon
         requireExactlyOne("NewX navigation bar item renderer", rendererCandidates) { it.toString() }
     val rendererDescriptor = renderer.toSmaliDescriptor()
 
+    // 12.43 folded the item content lambda into a merged synthetic class whose constructor shape
+    // is shared with unrelated branches (grok cards, media players), so the constructor no longer
+    // identifies the consumer. Discover it by behavior instead: the method that calls the renderer
+    // and owns the icon when-mapping array.
+    val mergedLambdaKeys =
+        classDefFlatMap { classDef ->
+            classDef.methods.mapNotNull { method ->
+                if (method.implementation == null) return@mapNotNull null
+                val methodInstructions = method.instructions.toList()
+                if (methodInstructions.none { instruction -> instruction.referencesMethod(rendererDescriptor) }) {
+                    return@mapNotNull null
+                }
+                val hasWhenMapping =
+                    methodInstructions.any { instruction ->
+                        instruction.opcode == Opcode.SGET_OBJECT &&
+                            instruction.getReference<FieldReference>()?.type == "[I"
+                    }
+                if (!hasWhenMapping) return@mapNotNull null
+                MergedLambdaKey(
+                    definingClass = classDef.type,
+                    name = method.name,
+                    parameterTypes = method.parameterTypes.map(CharSequence::toString),
+                )
+            }
+        }
+    if (mergedLambdaKeys.size == 1) {
+        return resolveNavBarItemContentFromMergedLambda(
+            key = mergedLambdaKeys.single(),
+            renderer = renderer,
+            rendererDescriptor = rendererDescriptor,
+            tabData = tabData,
+        )
+    }
+
     // The merged constructor shape is shared by unrelated lambdas, so the constructor alone is
     // no longer unique. Keep only shape candidates that actually invoke the resolved renderer;
     // the caller scan is scoped to those candidates rather than the whole dex.
@@ -535,8 +668,12 @@ internal fun MutableMethod.resolveNavigationTabIcons(
     val switchIndices =
         instructions.withIndex().filter { indexed -> indexed.value.opcode == Opcode.PACKED_SWITCH }
             .map { indexed -> indexed.index }
+    // The merged lambda dispatches its captured branches with a packed-switch over a byte field;
+    // only the icon and label switches are fed by the when-mapping array, so requiring that chain
+    // keeps the branch dispatch out of the icon switch candidates.
+    val mappingSwitches = switchIndices.filter { index -> isMappingArraySwitch(index, mappingField) }
     val iconSwitches =
-        switchIndices.filter { index ->
+        mappingSwitches.filter { index ->
             packedSwitchCases(index).any { switchCase ->
                 instructions.resolveCaseIconField(switchCase, iconRegister) != null
             }
@@ -612,6 +749,46 @@ internal fun MutableMethod.packedSwitchCases(switchIndex: Int): List<PackedSwitc
     }
 }
 
+/** Opcodes allowed between the when-mapping array load and the packed-switch it feeds. */
+private val MAPPING_CHAIN_OPCODES =
+    setOf(
+        Opcode.AGET,
+        Opcode.INVOKE_VIRTUAL,
+        Opcode.MOVE_RESULT,
+        Opcode.MOVE,
+        Opcode.MOVE_16,
+        Opcode.MOVE_FROM16,
+    )
+
+/**
+ * Detects the `sget mapping array -> ordinal -> aget -> packed-switch` chain that feeds the icon
+ * and label switches. The merged lambda's branch dispatch switch reads a captured byte field
+ * instead, so it fails this check.
+ */
+private fun MutableMethod.isMappingArraySwitch(
+    switchIndex: Int,
+    mappingField: FieldReference,
+): Boolean {
+    var sawArrayLoad = false
+    var sawArrayRead = false
+    for (index in switchIndex - 1 downTo 0) {
+        val instruction = instructions[index]
+        when (instruction.opcode) {
+            Opcode.SGET_OBJECT -> {
+                if (sawArrayLoad) return false
+                val reference = instruction.getReference<FieldReference>() ?: return false
+                if (reference.toString() != mappingField.toString()) return false
+                sawArrayLoad = true
+            }
+            Opcode.AGET -> sawArrayRead = true
+            in MAPPING_CHAIN_OPCODES -> Unit
+            else -> return false
+        }
+        if (sawArrayLoad && sawArrayRead) return true
+    }
+    return false
+}
+
 internal fun List<Instruction>.resolveCaseIconField(
     switchCase: PackedSwitchCase,
     iconRegister: Int,
@@ -641,10 +818,16 @@ internal fun List<Instruction>.resolveDefaultIconField(
 ): FieldReference? {
     for (index in switchIndex - 1 downTo 0) {
         val instruction = this[index]
+        // The switch value chain (aget from the when-mapping array) reuses the icon register in
+        // 12.43; it is not an icon assignment.
+        if (instruction.opcode == Opcode.AGET) continue
         if (instruction.destinationRegisterOrNull() != iconRegister) continue
         if (instruction.opcode != Opcode.SGET_OBJECT) return null
-        return instruction.getReference<FieldReference>()
-            ?.takeIf { reference -> reference.type.startsWith(ICONS_DESCRIPTOR_PREFIX) }
+        // The when-mapping array load also targets the icon register; keep walking past it to the
+        // pre-switch conditional assignment (e.g. the Grok identity check).
+        val field = instruction.getReference<FieldReference>() ?: return null
+        if (!field.type.startsWith(ICONS_DESCRIPTOR_PREFIX)) continue
+        return field
     }
     return null
 }
