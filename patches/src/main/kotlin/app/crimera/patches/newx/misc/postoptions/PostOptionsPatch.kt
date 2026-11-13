@@ -505,23 +505,28 @@ private fun resolveIconSwitchAssignments(method: Method): IconSwitchShape? {
             val destination = (instruction as OneRegisterInstruction).registerA
             (field.definingClass.toString() to field.type.toString()) to (field to destination)
         }.groupBy({ it.first }, { it.second })
-    // One preload per candidate icon plus per-arm reloads: the icon holder stands out
-    // from every other static load in the renderer by loading several distinct fields of
-    // one type (singleton loads like Kotlin Unit repeat one field many times).
-    val iconLoads =
-        loadsByType.entries.singleOrNull { (_, entries) ->
-            entries.size >= 4 && entries.map { it.first.toString() }.distinct().size >= 3
-        } ?: return null
-    val iconRegisters = iconLoads.value.map { it.second }.toSet()
-    val resultRegister =
-        code.mapNotNull { instruction ->
-            if (instruction.opcode !in OBJECT_MOVE_OPCODES) return@mapNotNull null
-            val move = instruction as TwoRegisterInstruction
-            // The convergence move targets a register that was itself preloaded with an
-            // icon; stray moves out of icon registers in sibling lambda bodies do not.
-            move.registerA.takeIf { move.registerB in iconRegisters && move.registerA in iconRegisters }
-        }.distinct().singleOrNull() ?: return null
-    return IconSwitchShape(iconType = iconLoads.key.second, resultRegister = resultRegister)
+    // One preload per candidate icon plus per-arm reloads. Several holder groups can pass
+    // the load-count screen in a merged renderer (e.g. compose node modifiers), so run the
+    // full convergence check per group and keep the single group that resolves.
+    val shapes =
+        loadsByType.entries.mapNotNull { (key, entries) ->
+            if (entries.size < 4 || entries.map { it.first.toString() }.distinct().size < 3) {
+                return@mapNotNull null
+            }
+            val iconRegisters = entries.map { entry -> entry.second }.toSet()
+            val resultRegister =
+                code.mapNotNull { instruction ->
+                    if (instruction.opcode !in OBJECT_MOVE_OPCODES) return@mapNotNull null
+                    val move = instruction as TwoRegisterInstruction
+                    // The convergence move targets a register that was itself preloaded with
+                    // an icon; stray moves out of icon registers in sibling lambda bodies do not.
+                    move.registerA.takeIf {
+                        move.registerB in iconRegisters && move.registerA in iconRegisters
+                    }
+                }.distinct().singleOrNull() ?: return@mapNotNull null
+            IconSwitchShape(iconType = key.second, resultRegister = resultRegister)
+        }
+    return shapes.singleOrNull()
 }
 
 context(_: BytecodePatchContext)

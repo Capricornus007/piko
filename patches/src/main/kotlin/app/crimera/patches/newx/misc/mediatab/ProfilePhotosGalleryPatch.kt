@@ -841,26 +841,35 @@ private fun resolveTimelineItemCallbackIndex(method: Method, timelineListDescrip
         return legacyShape || capturedShape
     }
 
+    val stateClassTypes = instructions.withIndex().mapNotNull { (index, instruction) ->
+        if (instruction.opcode != Opcode.NEW_INSTANCE) return@mapNotNull null
+        val type = (instruction as? ReferenceInstruction)?.reference?.toString()
+            ?: return@mapNotNull null
+        if (!type.startsWith(URT_UI_SCOPE)) return@mapNotNull null
+        val hasStateConstructor = instructions.drop(index + 1).take(32).any { constructorInstruction ->
+            if (constructorInstruction.opcode != Opcode.INVOKE_DIRECT &&
+                constructorInstruction.opcode != Opcode.INVOKE_DIRECT_RANGE
+            ) {
+                return@any false
+            }
+            val reference = constructorInstruction.getReference<MethodReference>()
+                ?: return@any false
+            reference.definingClass == type &&
+                isTimelineStateConstructor(reference)
+        }
+        type.takeIf { hasStateConstructor }
+    }.distinct()
+    // The state class carries exactly the item renderer and the item click callback; the
+    // 12.43 capture-all lambda (five Function1 parameters) is a recompose wrapper, not it.
+    val twoCallbackTypes = stateClassTypes.filter { type ->
+        context.classDefByOrNull(type)?.methods?.any { method ->
+            method.name == "<init>" &&
+                method.parameterTypes.count { it.toString() == FUNCTION1 } == 2
+        } == true
+    }
     val timelineStateType = requireExactlyOne(
         label = "NewX timeline state class",
-        candidates = instructions.withIndex().mapNotNull { (index, instruction) ->
-            if (instruction.opcode != Opcode.NEW_INSTANCE) return@mapNotNull null
-            val type = (instruction as? ReferenceInstruction)?.reference?.toString()
-                ?: return@mapNotNull null
-            if (!type.startsWith(URT_UI_SCOPE)) return@mapNotNull null
-            val hasStateConstructor = instructions.drop(index + 1).take(32).any { constructorInstruction ->
-                if (constructorInstruction.opcode != Opcode.INVOKE_DIRECT &&
-                    constructorInstruction.opcode != Opcode.INVOKE_DIRECT_RANGE
-                ) {
-                    return@any false
-                }
-                val reference = constructorInstruction.getReference<MethodReference>()
-                    ?: return@any false
-                reference.definingClass == type &&
-                    isTimelineStateConstructor(reference)
-            }
-            type.takeIf { hasStateConstructor }
-        }.distinct(),
+        candidates = twoCallbackTypes.ifEmpty { stateClassTypes },
     )
     val timelineState = context.mutableClassDefBy(timelineStateType)
     val stateConstructorCall = requireExactlyOne(
