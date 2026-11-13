@@ -605,8 +605,10 @@ internal fun resolveVideoTabPostTuple(
 
 /**
  * Proves that the wrapper's canonical-post accessor consists only of the semantic field chain:
- * wrapper.post -> timelinePost.postResult -> optional cast -> return. A generated accessor may
- * disappear; the caller resolver also accepts that same chain inlined into the handler.
+ * wrapper.post -> timelinePost.postResult -> optional instanceof-guarded cast -> return. A
+ * generated accessor may disappear; the caller resolver also accepts that same chain inlined into
+ * the handler. 12.43 guards the cast with an instanceof null-check diamond, so the guard opcodes
+ * and the second (null) return are part of the accepted shape.
  */
 private fun isCanonicalPostAccessor(
     method: Method,
@@ -618,7 +620,16 @@ private fun isCanonicalPostAccessor(
         method.parameterTypes.isNotEmpty() || method.returnType != canonicalPostType
     ) return false
     val instructions = method.implementation?.instructions?.toList() ?: return false
-    val allowedOpcodes = OBJECT_MOVE_OPCODES + setOf(Opcode.IGET_OBJECT, Opcode.CHECK_CAST, Opcode.RETURN_OBJECT)
+    val allowedOpcodes =
+        OBJECT_MOVE_OPCODES + setOf(
+            Opcode.IGET_OBJECT,
+            Opcode.CHECK_CAST,
+            Opcode.RETURN_OBJECT,
+            Opcode.INSTANCE_OF,
+            Opcode.IF_EQZ,
+            Opcode.CONST_4,
+            Opcode.CONST_16,
+        )
     if (instructions.any { it.opcode !in allowedOpcodes }) return false
     val fieldReads = instructions.mapIndexedNotNull { index, instruction ->
         if (instruction.opcode != Opcode.IGET_OBJECT) return@mapIndexedNotNull null
@@ -646,8 +657,10 @@ private fun isCanonicalPostAccessor(
     val returns = instructions.mapIndexedNotNull { index, instruction ->
         index.takeIf { instruction.opcode == Opcode.RETURN_OBJECT }
     }
-    if (returns.size != 1) return false
-    val returnIndex = returns.single()
+    // The instanceof diamond adds a second return that yields the null constant; the first return
+    // is the guarded value path.
+    if (returns.isEmpty() || returns.size > 2) return false
+    val returnIndex = returns.first()
     val returnRegister = (instructions[returnIndex] as? OneRegisterInstruction)?.registerA ?: return false
     val casts = instructions.mapIndexedNotNull { index, instruction ->
         index.takeIf { instruction.opcode == Opcode.CHECK_CAST }

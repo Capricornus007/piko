@@ -1110,14 +1110,6 @@ private fun patchCardUrlResolver(
     setting: ToggleSettingDefinition,
 ) {
     val method = match.method
-    val navigationIndex = match.instructionMatches.single().index
-    val navigation =
-        method.instructions.getOrNull(navigationIndex) as? Instruction35c
-            ?: throw PatchException("Card URL transform call is not a 5-register invoke")
-    val urlRegister =
-        navigation.registersUsed.firstOrNull()
-            ?: throw PatchException("Card URL transform call has no URL register")
-
     val originalRegisterCount =
         method.implementation?.registerCount
             ?: throw PatchException("Card URL resolver has no implementation: $method")
@@ -1130,6 +1122,26 @@ private fun patchCardUrlResolver(
     val classDef = context.mutableClassDefBy(method.definingClass)
     classDef.methods.remove(method)
     classDef.methods.add(mutable)
+
+    // Re-discover the transform call on the mutable clone: the builder conversion can shift
+    // instruction indices relative to the immutable fingerprint match.
+    val navigationIndices =
+        mutable.instructions.mapIndexedNotNull { index, instruction ->
+            if (instruction.opcode != Opcode.INVOKE_STATIC) return@mapIndexedNotNull null
+            val reference = instruction.getReference<MethodReference>() ?: return@mapIndexedNotNull null
+            index.takeIf {
+                reference.definingClass == "Lcom/x/navigation/" &&
+                    reference.returnType == STRING_DESCRIPTOR
+            }
+        }
+    val navigationIndex =
+        requireExactlyOne("NewX card URL transform call", navigationIndices) { it.toString() }
+    val navigation =
+        mutable.instructions.getOrNull(navigationIndex) as? Instruction35c
+            ?: throw PatchException("Card URL transform call is not a 5-register invoke")
+    val urlRegister =
+        navigation.registersUsed.firstOrNull()
+            ?: throw PatchException("Card URL transform call has no URL register")
 
     val settingRead =
         setting.injectRead(
