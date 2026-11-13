@@ -298,18 +298,19 @@ private fun resolveProfileTabListTarget(): ProfileTabListTarget {
         throw PatchException("NewX profile tab list result is not moved with move-result-object: $method")
     }
     val listRegister = (resultInstruction as OneRegisterInstruction).registerA
-    val consumer =
-        instructions.getOrNull(callIndex + 2)
-            ?: throw PatchException("NewX profile tab list consumer is missing in $method")
-    if (consumer.opcode !in INVOKE_OPCODES) {
-        throw PatchException("NewX profile tab list consumer is not an invoke: $method @ ${callIndex + 2}")
-    }
-    if (listRegister !in consumer.registersUsed) {
+    // 12.41 passed the list straight to an invoke right after the move-result-object; 12.43 first
+    // wraps it in a lambda object (new-instance + invoke-direct), so scan forward for the first
+    // invoke that actually consumes the list register and hook in front of it.
+    val consumerOffset =
+        instructions.drop(callIndex + 2).take(8).indexOfFirst { instruction ->
+            instruction.opcode in INVOKE_OPCODES && listRegister in instruction.registersUsed
+        }
+    if (consumerOffset == -1) {
         throw PatchException(
-            "NewX profile tab list register v$listRegister is not consumed by the call in $method " +
-                "@ ${callIndex + 2}",
+            "NewX profile tab list consumer not found after listOfNotNull in $method @ $callIndex",
         )
     }
+    val insertionIndex = callIndex + 2 + consumerOffset
 
     val mutableClass = context.mutableClassDefBy(method.definingClass)
     val mutableMethod =

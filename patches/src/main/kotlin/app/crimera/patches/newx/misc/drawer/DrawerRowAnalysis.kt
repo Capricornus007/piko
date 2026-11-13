@@ -20,8 +20,8 @@ internal fun MethodReference.isStringResourceLookup(): Boolean =
  *
  * 12.41 and earlier: (String, icons, Function0, Modifier, ..., Composer, I, I)
  * 12.43: a drawer-scope state parameter is inserted before Modifier and the simple overload ends
- * with a single changed-changes int: (String, icons, Function0, drawer/*, Modifier, Composer, I)
- * and (String, icons, Function0, drawer/*, Modifier, Z, g, g, Composer, I, I).
+ * with a single changed-changes int: (String, icons, Function0, drawer state, Modifier, Composer, I)
+ * and (String, icons, Function0, drawer state, Modifier, Z, g, g, Composer, I, I).
  */
 internal fun MethodReference.isDrawerRowRenderer(): Boolean {
     val parameters = parameterTypes.map(CharSequence::toString)
