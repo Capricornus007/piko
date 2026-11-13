@@ -360,7 +360,14 @@ private fun Method.isNavBarItemContentConstructor(tabData: NewXNavBarTabData): B
 private fun List<String>.isNavBarItemContentConstructor(tabData: NewXNavBarTabData): Boolean =
     this == listOf("Z", tabData.navigationType, tabData.tabDataValueType) ||
         (size == 4 && take(3) == MERGED_LAMBDA_CONSTRUCTOR_PARAMETERS.take(3) &&
-            last() in setOf("I", "B"))
+            last() in setOf("I", "B")) ||
+        // 12.43 packs the renderer arguments straight into the merged lambda constructor:
+        // (icon, label, tab data, changed).
+        (size == 4 &&
+            this[0].startsWith(ICONS_DESCRIPTOR_PREFIX) &&
+            this[1] == STRING_DESCRIPTOR &&
+            this[2] == tabData.tabDataValueType &&
+            this[3] == "I")
 
 private val MERGED_LAMBDA_CONSTRUCTOR_PARAMETERS =
     listOf("Z", "Ljava/lang/Object;", "Ljava/lang/Object;", "I")

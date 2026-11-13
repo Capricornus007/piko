@@ -86,6 +86,7 @@ private const val COMPOSER_DESCRIPTOR = "Landroidx/compose/runtime/Composer;"
 private const val FUNCTION0_DESCRIPTOR = "Lkotlin/jvm/functions/Function0;"
 private const val FUNCTION1_DESCRIPTOR = "Lkotlin/jvm/functions/Function1;"
 private const val FUNCTION3_DESCRIPTOR = "Lkotlin/jvm/functions/Function3;"
+private const val FUNCTION2_DESCRIPTOR = "Lkotlin/jvm/functions/Function2;"
 private const val OBJECT_DESCRIPTOR = "Ljava/lang/Object;"
 
 /**
@@ -220,6 +221,19 @@ private val NEWX_DRAWER_SHARED_FOOTER_ITEM_PARAMETERS =
         "I",
     )
 
+// 12.43 inserts the drawer state before Modifier and drops the trailing changed int:
+// (String, icon, click, state, Modifier, Composer, I).
+private val NEWX_DRAWER_SHARED_FOOTER_ITEM_WITH_STATE_PARAMETERS =
+    listOf(
+        "Ljava/lang/String;",
+        "L",
+        FUNCTION0_DESCRIPTOR,
+        "L",
+        "Landroidx/compose/ui/Modifier;",
+        COMPOSER_DESCRIPTOR,
+        "I",
+    )
+
 private object NewXDrawerContentClassFingerprint : Fingerprint(
     definingClass = DRAWER_SCOPE,
     returnType = "V",
@@ -260,6 +274,12 @@ private object NewXDrawerSharedFooterItemFingerprint : Fingerprint(
     classFingerprint = NewXDrawerContentClassFingerprint,
     returnType = "V",
     parameters = NEWX_DRAWER_SHARED_FOOTER_ITEM_PARAMETERS,
+)
+
+private object NewXDrawerSharedFooterItemWithStateFingerprint : Fingerprint(
+    classFingerprint = NewXDrawerContentClassFingerprint,
+    returnType = "V",
+    parameters = NEWX_DRAWER_SHARED_FOOTER_ITEM_WITH_STATE_PARAMETERS,
 )
 
 /**
@@ -698,11 +718,13 @@ private fun MutableMethod.findDrawerFooterCalls(
                 .getReference<MethodReference>()
                 ?.isDrawerFooterDivider(renderer) == true
         }
+    // 12.43 dropped the material3 divider call from the drawer content lambda, so a missing
+    // divider means every renderer call in the lambda is a footer candidate.
     val dividerIndex =
         requireAtMostOne(
             label = "NewX drawer footer divider",
             candidates = dividerIndices,
-        ) ?: return null
+        ) ?: -1
     val footerCalls = methodInstructions.indices.mapNotNull { index ->
         if (index <= dividerIndex) return@mapNotNull null
         val instruction = methodInstructions[index]
@@ -713,7 +735,7 @@ private fun MutableMethod.findDrawerFooterCalls(
         val isRequestedRenderer =
             footerRenderer.toSmaliDescriptor() == renderer.toSmaliDescriptor()
         if (footerRenderer.definingClass != renderer.definingClass ||
-            (!isRequestedRenderer && !footerRenderer.isDrawerRowRenderer()) ||
+            (!isRequestedRenderer && (!footerRenderer.isDrawerRowRenderer() || dividerIndex < 0)) ||
             call.registerCount != footerRenderer.parameterTypes.size
         ) {
             return@mapNotNull null
@@ -783,7 +805,10 @@ private fun resolveDrawerFooterTarget(
     val candidates = buildList {
         context.classDefForEach { classDef ->
             if (!classDef.type.startsWith(DRAWER_SCOPE)) return@classDefForEach
-            if (!classDef.interfaces.any { it.toString() == FUNCTION3_DESCRIPTOR }) {
+            // 12.42- host the footer rows in a Function3 lambda; 12.43 moved them into the
+            // Function2 drawer content lambda.
+            val interfaces = classDef.interfaces.map { it.toString() }
+            if (FUNCTION3_DESCRIPTOR !in interfaces && FUNCTION2_DESCRIPTOR !in interfaces) {
                 return@classDefForEach
             }
 
@@ -792,8 +817,8 @@ private fun resolveDrawerFooterTarget(
                 .filter { method ->
                     method.name == "invoke" &&
                         method.returnType == OBJECT_DESCRIPTOR &&
-                        method.parameterTypes.map(CharSequence::toString) ==
-                            List(3) { OBJECT_DESCRIPTOR }
+                        method.parameterTypes.map(CharSequence::toString).all { it == OBJECT_DESCRIPTOR } &&
+                        method.parameterTypes.size in 2..3
                 }.forEach { method ->
                     method.findDrawerFooterCalls(renderer)?.let { footer ->
                         val iconParameterIndex = footer.renderer.parameterTypes.indexOfFirst { type ->
@@ -1458,7 +1483,8 @@ val customizeNewXDrawerPatch =
 
             // FOOTER ROWS: settings/help/feedback/media/imprint/debug render with a title.
             val footerMatches =
-                NewXDrawerSharedFooterItemFingerprint.scopedMatchAllOrNull().orEmpty()
+                (NewXDrawerSharedFooterItemFingerprint.scopedMatchAllOrNull().orEmpty() +
+                    NewXDrawerSharedFooterItemWithStateFingerprint.scopedMatchAllOrNull().orEmpty())
                     .distinctBy { it.originalMethod.toString() }
             if (footerMatches.size > 1) {
                 throw PatchException(

@@ -319,8 +319,8 @@ val restoreTimelinePositionPatch =
                 requireExactlyOne(
                     "NewX home timeline start-trim switch read",
                     candidates =
-                        NewXHomeStartTrimFingerprint.scopedMatchAll() +
-                            NewXHomeStartTrimMinEntriesFingerprint.scopedMatchAll(),
+                        NewXHomeStartTrimFingerprint.scopedMatchAllOrNull().orEmpty() +
+                            NewXHomeStartTrimMinEntriesFingerprint.scopedMatchAllOrNull().orEmpty(),
                 )
             val trimSkipValue =
                 if (homeStartTrimMatch.instructionMatches.any { match ->
