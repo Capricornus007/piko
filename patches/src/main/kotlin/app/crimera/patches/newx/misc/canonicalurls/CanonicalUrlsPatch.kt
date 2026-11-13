@@ -35,8 +35,10 @@ import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.bytecodePatch
 import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod
 import app.morphe.patcher.util.getReference
+import app.morphe.patcher.util.numberOfParameterRegisters
 import app.morphe.patcher.util.p0Register
 import app.morphe.patcher.util.registersUsed
+import app.morphe.util.cloneMutable
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.Method
@@ -44,6 +46,7 @@ import com.android.tools.smali.dexlib2.iface.instruction.Instruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OffsetInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction35c
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 import com.android.tools.smali.dexlib2.iface.reference.StringReference
@@ -1006,6 +1009,29 @@ private fun patchCardNavigation(
     contextualPostType: String,
     setting: ToggleSettingDefinition,
 ) {
+    // 12.43 split the merged card navigation callback: the card URL for a post click is now
+    // resolved by a dedicated renderer method that takes the contextual post and returns the URL
+    // after the navigation-package transform. Hook that transform and feed it the canonical URL
+    // resolved through the contextual post's URL entities.
+    val resolverMatches =
+        Fingerprint(
+            definingClass = "Lcom/x/urt/items/post/",
+            parameters = listOf(contextualPostType),
+            returnType = STRING_DESCRIPTOR,
+            filters =
+                listOf(
+                    methodCall(
+                        opcode = Opcode.INVOKE_STATIC,
+                        definingClass = "Lcom/x/navigation/",
+                        returnType = STRING_DESCRIPTOR,
+                    ),
+                ),
+        ).scopedMatchAllOrNull().orEmpty()
+    if (resolverMatches.size == 1) {
+        patchCardUrlResolver(resolverMatches.single(), setting)
+        return
+    }
+
     // The URL handed to the card navigation call is the card URL field read directly, because the
     // getter is inlined into the callback. The tail anchors keep the match on the card path even
     // when the callback contains other navigation calls.
@@ -1071,6 +1097,65 @@ private data class CardNavigationShape(
     val urlRegister: Int,
     val getIdIndex: Int,
 )
+
+/**
+ * Hooks the 12.43 card URL resolver (`urt/items/post` renderer method taking the contextual post
+ * and returning the card URL after the navigation-package transform). The contextual post
+ * parameter is preserved at method entry because the compiler reuses its register for the inlined
+ * URL getter chain before the transform call consumes the resolved URL.
+ */
+context(context: BytecodePatchContext)
+private fun patchCardUrlResolver(
+    match: Match,
+    setting: ToggleSettingDefinition,
+) {
+    val method = match.method
+    val navigationIndex = match.instructionMatches.single().index
+    val navigation =
+        method.instructions.getOrNull(navigationIndex) as? Instruction35c
+            ?: throw PatchException("Card URL transform call is not a 5-register invoke")
+    val urlRegister =
+        navigation.registersUsed.firstOrNull()
+            ?: throw PatchException("Card URL transform call has no URL register")
+
+    val originalRegisterCount =
+        method.implementation?.registerCount
+            ?: throw PatchException("Card URL resolver has no implementation: $method")
+    val postLocal = originalRegisterCount
+    val postParamRegister = method.p0Register + 1
+    val mutable =
+        method.cloneMutable(
+            additionalRegisters = method.numberOfParameterRegisters + 1,
+        )
+    val classDef = context.mutableClassDefBy(method.definingClass)
+    classDef.methods.remove(method)
+    classDef.methods.add(mutable)
+
+    val settingRead =
+        setting.injectRead(
+            method = mutable,
+            index = navigationIndex,
+            excludedRegisters = listOf(postLocal, urlRegister),
+            registerConstraint = SettingReadRegisterConstraint.FOUR_BIT,
+        )
+    mutable.insertHook(
+        index = settingRead.nextIndex,
+        relocateBranchTargets = false,
+    ) {
+        ifEqz(settingRead.register, Target.Original)
+        invokeStatic(methodReference(CANONICAL_URL_RESOLVE_METHOD), postLocal, urlRegister)
+        moveResult(urlRegister, STRING_DESCRIPTOR)
+    }
+    // Preserve the contextual post before the compiler reuses its register. Inserted last so the
+    // transform call index above stayed valid.
+    mutable.insertHook(
+        index = 0,
+        excludedRegisters = listOf(postParamRegister),
+        relocateBranchTargets = false,
+    ) {
+        move(postLocal, postParamRegister, OBJECT_DESCRIPTOR)
+    }
+}
 
 private fun resolveInlinedCardNavigationShape(
     match: Match,
