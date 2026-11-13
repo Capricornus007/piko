@@ -115,10 +115,13 @@ private object NewXReplyFacepileDividerFingerprint : Fingerprint(
     // by field type instead of scanning every class.
     filters = listOf(fieldAccess(opcode = Opcode.IGET_OBJECT, type = ARRAY_LIST_DESCRIPTOR)),
     custom = { method, _ ->
-        method.parameterDescriptors().hasComposeShape(
-            required = listOf(MODIFIER_DESCRIPTOR, COMPOSER_DESCRIPTOR),
-            last = INSETS_DESCRIPTOR,
-        ) && method.hasReplyFacepileDividerFlow()
+        // The reply facepile renderer is a URT post composable; requiring a URT parameter keeps
+        // same-shaped Grok podcast renderers (ai/x/grok/...) out of the candidate list.
+        method.parameterDescriptors().any { it.startsWith("Lcom/x/urt/") } &&
+            method.parameterDescriptors().hasComposeShape(
+                required = listOf(MODIFIER_DESCRIPTOR, COMPOSER_DESCRIPTOR),
+                last = INSETS_DESCRIPTOR,
+            ) && method.hasReplyFacepileDividerFlow()
     },
 )
 
