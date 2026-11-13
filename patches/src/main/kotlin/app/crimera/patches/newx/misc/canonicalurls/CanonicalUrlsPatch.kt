@@ -1130,7 +1130,9 @@ private fun patchCardUrlResolver(
             if (instruction.opcode != Opcode.INVOKE_STATIC) return@mapIndexedNotNull null
             val reference = instruction.getReference<MethodReference>() ?: return@mapIndexedNotNull null
             index.takeIf {
-                reference.definingClass == "Lcom/x/navigation/" &&
+                // The fingerprint filter matches the navigation package as a prefix; the
+                // concrete R8 class (e.g. Lcom/x/navigation/c5;) is only known at runtime.
+                reference.definingClass.startsWith("Lcom/x/navigation/") &&
                     reference.returnType == STRING_DESCRIPTOR
             }
         }

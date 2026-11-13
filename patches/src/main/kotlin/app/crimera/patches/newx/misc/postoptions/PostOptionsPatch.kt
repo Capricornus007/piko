@@ -398,39 +398,50 @@ private fun injectLabelsAndIcons(contributions: List<PostOptionContribution>) {
         postOptionsFeedbackLookups(renderer.method, feedbackField, isMap))
     val actionRegister = lookup.actionRegister
 
-    val iconAssignmentCandidates =
-        renderer.method.instructions.withIndex().filter { (index, instruction) ->
-            instruction.opcode in OBJECT_MOVE_OPCODES &&
-                index < lookup.callIndex &&
-                renderer.method.instructions.getOrNull(index + 1)?.opcode in
-                setOf(Opcode.GOTO, Opcode.GOTO_16, Opcode.GOTO_32)
-        }
-    if (iconAssignmentCandidates.isEmpty()) {
-        throw PatchException(
-            "Expected NewX post-options icon assignments, found none",
-        )
-    }
-    val iconAssignments = iconAssignmentCandidates.mapNotNull { candidate ->
-        val assignment = candidate.value as? TwoRegisterInstruction
-            ?: throw PatchException(
-                "NewX post-options icon assignment has no registers at instruction ${candidate.index}",
+    val iconSwitch = resolveIconSwitchAssignments(renderer.method)
+    val iconResultRegister: Int
+    val iconType: String
+    if (iconSwitch != null) {
+        // 12.43: the selection switch preloads every candidate icon before the dispatch
+        // and the arms converge on one register; the per-arm assignments no longer sit
+        // before the label lookup, so the legacy move-object+goto scan cannot see them.
+        iconResultRegister = iconSwitch.resultRegister
+        iconType = iconSwitch.iconType
+    } else {
+        val iconAssignmentCandidates =
+            renderer.method.instructions.withIndex().filter { (index, instruction) ->
+                instruction.opcode in OBJECT_MOVE_OPCODES &&
+                    index < lookup.callIndex &&
+                    renderer.method.instructions.getOrNull(index + 1)?.opcode in
+                    setOf(Opcode.GOTO, Opcode.GOTO_16, Opcode.GOTO_32)
+            }
+        if (iconAssignmentCandidates.isEmpty()) {
+            throw PatchException(
+                "Expected NewX post-options icon assignments, found none",
             )
-        val field = renderer.method.instructions.resolveFieldReadOrNull(
-            register = assignment.registerB,
-            untilIndex = candidate.index,
-        ) ?: return@mapNotNull null
-        IconAssignment(instruction = assignment, field = field)
+        }
+        val iconAssignments = iconAssignmentCandidates.mapNotNull { candidate ->
+            val assignment = candidate.value as? TwoRegisterInstruction
+                ?: throw PatchException(
+                    "NewX post-options icon assignment has no registers at instruction ${candidate.index}",
+                )
+            val field = renderer.method.instructions.resolveFieldReadOrNull(
+                register = assignment.registerB,
+                untilIndex = candidate.index,
+            ) ?: return@mapNotNull null
+            IconAssignment(instruction = assignment, field = field)
+        }
+        iconResultRegister =
+            requireExactlyOne(
+                label = "NewX post-options icon result register",
+                candidates = iconAssignments.map { assignment -> assignment.instruction.registerA }.distinct(),
+            )
+        iconType =
+            requireExactlyOne(
+                label = "NewX post-options icon type",
+                candidates = iconAssignments.map { assignment -> assignment.field.type }.distinct(),
+            )
     }
-    val iconResultRegister =
-        requireExactlyOne(
-            label = "NewX post-options icon result register",
-            candidates = iconAssignments.map { assignment -> assignment.instruction.registerA }.distinct(),
-        )
-    val iconType =
-        requireExactlyOne(
-            label = "NewX post-options icon type",
-            candidates = iconAssignments.map { assignment -> assignment.field.type }.distinct(),
-        )
 
     val iconFields = contributions.associateWith { resolveIconField(it.iconResourceName, iconType) }
 
@@ -476,6 +487,39 @@ private fun injectLabelsAndIcons(contributions: List<PostOptionContribution>) {
 
 /** Name of the label that starts the icon check of the contribution at [index]. */
 private fun iconContinuationLabel(index: Int): String = "piko_newx_post_option_icon_$index"
+
+private data class IconSwitchShape(val iconType: String, val resultRegister: Int)
+
+/**
+ * 12.43 shape: the renderer preloads every candidate icon (sget-object of one holder
+ * class's fields) before the selection switch, and the arms converge on one result
+ * register by moving icon values into a register that was itself preloaded with an
+ * icon. Returns null when the method does not have this shape.
+ */
+private fun resolveIconSwitchAssignments(method: Method): IconSwitchShape? {
+    val code = method.instructions.toList()
+    val loadsByType =
+        code.mapIndexedNotNull { index, instruction ->
+            if (instruction.opcode != Opcode.SGET_OBJECT) return@mapIndexedNotNull null
+            val field = instruction.getReference<FieldReference>() ?: return@mapIndexedNotNull null
+            val destination = (instruction as OneRegisterInstruction).registerA
+            (field.definingClass.toString() to field.type.toString()) to (destination to index)
+        }.groupBy({ it.first }, { it.second })
+    // One preload per candidate icon plus per-arm reloads: the icon holder stands out
+    // from every other static load in the renderer by its load count alone.
+    val iconLoads =
+        loadsByType.entries.singleOrNull { (_, loads) -> loads.size >= 4 } ?: return null
+    val iconRegisters = iconLoads.value.map { (destination, _) -> destination }.toSet()
+    val resultRegister =
+        code.mapNotNull { instruction ->
+            if (instruction.opcode !in OBJECT_MOVE_OPCODES) return@mapNotNull null
+            val move = instruction as TwoRegisterInstruction
+            // The convergence move targets a register that was itself preloaded with an
+            // icon; stray moves out of icon registers in sibling lambda bodies do not.
+            move.registerA.takeIf { move.registerB in iconRegisters && move.registerA in iconRegisters }
+        }.distinct().singleOrNull() ?: return null
+    return IconSwitchShape(iconType = iconLoads.key.second, resultRegister = resultRegister)
+}
 
 context(_: BytecodePatchContext)
 private fun injectActionHandlers(contributions: List<PostOptionContribution>) {

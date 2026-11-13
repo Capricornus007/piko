@@ -145,8 +145,14 @@ private object TwitterLaunchRevealMarkerFingerprint : Fingerprint(
 )
 
 private fun isLaunchRevealCallback(method: Method): Boolean {
-    if (AccessFlags.STATIC.isSet(method.accessFlags) || method.returnType != "V" || method.parameterTypes.size != 1) return false
-    val callbackParameter = method.parameterTypes.single().toString()
+    // 12.41 and earlier: instance method taking the callback object alone.
+    // 12.43: the listener lambda desugared into a static method whose last
+    // parameter is the callback object (first parameter is the captured receiver).
+    val isLegacyShape = !AccessFlags.STATIC.isSet(method.accessFlags) && method.parameterTypes.size == 1
+    val isLambdaShape = AccessFlags.STATIC.isSet(method.accessFlags) && method.parameterTypes.size == 2
+    if (!isLegacyShape && !isLambdaShape) return false
+    if (method.returnType != "V") return false
+    val callbackParameter = method.parameterTypes.last().toString()
     if (!callbackParameter.startsWith("L")) return false
 
     val staticCalls = method.staticInvokeReferences().map { it.second }
@@ -206,6 +212,53 @@ private fun validateNormalSplashDismiss(reference: MethodReference) {
     }
 }
 
+/**
+ * 12.43+: the reveal/fallback dispatch inside the callback is a conditional
+ * branch whose target block holds the fallback call. Overwrite the branch
+ * condition right before it so the branch always routes to the normal dismiss.
+ */
+private fun forceNormalSplashDispatch(
+    callbackMethod: MutableMethod,
+    fallbackCall: Pair<Int, MethodReference>,
+    renderer: Method,
+    callbackParameter: String,
+) {
+    val instructions = callbackMethod.instructions.toList()
+    val revealCall =
+        requireExactlyOne(
+            label = "NewX launch reveal call in $callbackMethod",
+            candidates = callbackMethod.staticInvokeReferences().filter { (_, reference) ->
+                reference.definingClass == renderer.definingClass &&
+                    hasObjectAndIntParameterShape(reference.parameterTypes, callbackParameter) &&
+                    reference.returnType == "V"
+            },
+            describe = { "instruction ${it.first}: ${it.second.descriptor()}" },
+        )
+    val revealIndex = revealCall.first
+    val fallbackIndex = fallbackCall.first
+    val dispatch =
+        instructions.take(revealIndex).mapIndexedNotNull { index, instruction ->
+            val branch = instruction as? BuilderOffsetInstruction ?: return@mapIndexedNotNull null
+            // Zeroing the condition forces IF_EQZ taken; one forces IF_NEZ taken.
+            val forcedValue =
+                when (branch.opcode) {
+                    Opcode.IF_EQZ -> 0
+                    Opcode.IF_NEZ -> 1
+                    else -> return@mapIndexedNotNull null
+                }
+            val target = branch.target.location.index
+            if (target <= revealIndex || target > fallbackIndex) return@mapIndexedNotNull null
+            val conditionRegister = (branch as? OneRegisterInstruction)?.registerA
+                ?: return@mapIndexedNotNull null
+            index to (conditionRegister to forcedValue)
+        }.firstOrNull() ?: throw PatchException("NewX launch reveal dispatch branch was not found in $callbackMethod")
+    val (branchIndex, conditionAndValue) = dispatch
+    val (conditionRegister, forcedValue) = conditionAndValue
+    callbackMethod.insertHook(index = branchIndex, relocateBranchTargets = true) {
+        constInt(conditionRegister, forcedValue)
+    }
+}
+
 private val restoreTwitterLaunchRevealPatch =
     bytecodePatch(
         name = "NewX: Restore Twitter splash transition",
@@ -239,7 +292,7 @@ private val restoreTwitterLaunchRevealPatch =
                 )
 
             val callbackMethod = callback.method
-            val callbackParameter = callbackMethod.parameterTypes.single().toString()
+            val callbackParameter = callbackMethod.parameterTypes.last().toString()
             val fallbackCalls =
                 callbackMethod.staticInvokeReferences().filter { (_, reference) ->
                     reference.definingClass == renderer.definingClass &&
@@ -293,6 +346,14 @@ private val restoreTwitterLaunchRevealPatch =
                     }
                     gate to sdkRegister
                 }
+            if (sdkGates.isEmpty()) {
+                // 12.43+: the SDK gate moved out of the callback (it now guards listener
+                // registration upstream), and the reveal/fallback dispatch inside the callback
+                // is a conditional branch whose target block holds the fallback call. Force
+                // that branch so the normal dismiss always runs.
+                forceNormalSplashDispatch(callbackMethod, fallbackCall, renderer, callbackParameter)
+                return@execute
+            }
             val (gateIndex, sdkRegister) =
                 requireExactlyOne(
                     label = "NewX launch reveal SDK gate in ${callback.originalMethod}",

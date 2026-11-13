@@ -163,16 +163,27 @@ private fun isNewXTimelineBody(
             val constructor =
                 (constructorInstruction as? ReferenceInstruction)?.reference as? MethodReference
                     ?: return@any false
+            if (constructor.definingClass != lambdaType || constructor.name != "<init>") {
+                return@any false
+            }
             val constructorParameters = constructor.parameterTypes.map(CharSequence::toString)
-            constructor.definingClass == lambdaType &&
-                constructor.name == "<init>" &&
+            // 12.41 and earlier: the lambda captured only the render pipeline (Function3
+            // first, no model or modifier). 12.43: the lambda captures the full parameter
+            // set, so the model and modifier appear in the constructor too.
+            val legacyShape =
                 constructorParameters.firstOrNull() == FUNCTION3 &&
+                    constructorParameters.count { it == timelineListDescriptor } == 1 &&
+                    constructorParameters.none {
+                        it == MODIFIER || isDirectDescriptorInScope(it, TIMELINE_MODEL_SCOPE)
+                    } &&
+                    constructorParameters.any { it.startsWith(PAGING_SCOPE) } &&
+                    constructorParameters.any { it == FUNCTION1 }
+            val capturedShape =
                 constructorParameters.count { it == timelineListDescriptor } == 1 &&
-                constructorParameters.none {
-                    it == MODIFIER || isDirectDescriptorInScope(it, TIMELINE_MODEL_SCOPE)
-                } &&
-                constructorParameters.any { it.startsWith(PAGING_SCOPE) } &&
-                constructorParameters.any { it == FUNCTION1 }
+                    constructorParameters.count { isDirectDescriptorInScope(it, TIMELINE_MODEL_SCOPE) } == 1 &&
+                    constructorParameters.any { it.startsWith(PAGING_SCOPE) } &&
+                    constructorParameters.any { it == FUNCTION1 }
+            legacyShape || capturedShape
         }
     }
 }
@@ -810,14 +821,24 @@ private fun resolveTimelineItemCallbackIndex(method: Method, timelineListDescrip
         ?: throw PatchException("Photos timeline renderer has no implementation: $method")
     fun isTimelineStateConstructor(reference: MethodReference): Boolean {
         val parameters = reference.parameterTypes.map(CharSequence::toString)
-        return reference.name == "<init>" &&
+        if (reference.name != "<init>") return false
+        // 12.41 and earlier: the state lambda captured only the render pipeline (Function3
+        // first, no model or modifier). 12.43: the state lambda captures the full renderer
+        // parameter set, so the model and modifier appear in the constructor too.
+        val legacyShape =
             parameters.firstOrNull() == FUNCTION3 &&
+                parameters.count { it == timelineListDescriptor } == 1 &&
+                parameters.none {
+                    it == MODIFIER || isDirectDescriptorInScope(it, TIMELINE_MODEL_SCOPE)
+                } &&
+                parameters.any { it.startsWith(PAGING_SCOPE) } &&
+                parameters.any { it == FUNCTION1 }
+        val capturedShape =
             parameters.count { it == timelineListDescriptor } == 1 &&
-            parameters.none {
-                it == MODIFIER || isDirectDescriptorInScope(it, TIMELINE_MODEL_SCOPE)
-            } &&
-            parameters.any { it.startsWith(PAGING_SCOPE) } &&
-            parameters.any { it == FUNCTION1 }
+                parameters.count { isDirectDescriptorInScope(it, TIMELINE_MODEL_SCOPE) } == 1 &&
+                parameters.any { it.startsWith(PAGING_SCOPE) } &&
+                parameters.any { it == FUNCTION1 }
+        return legacyShape || capturedShape
     }
 
     val timelineStateType = requireExactlyOne(
@@ -871,13 +892,15 @@ private fun resolveTimelineItemCallbackIndex(method: Method, timelineListDescrip
         stateConstructor.parameterTypes.indices.filter {
             stateConstructor.parameterTypes[it].toString() == FUNCTION1
         }
-    if (functionParameterIndexes.size != 2) {
+    if (functionParameterIndexes.isEmpty()) {
         throw PatchException(
-            "NewX timeline state constructor must expose exactly two Function1 callbacks: " +
+            "NewX timeline state constructor must expose Function1 callbacks: " +
                 "${stateConstructor.parameterTypes}",
         )
     }
-    // The state lambda's final Function1 is the item-click callback; the first renders each item.
+    // The state lambda's final Function1 is the item-click callback; the first renders each
+    // item. 12.43 captures the full renderer parameter set, so extra Function1 callbacks
+    // (paging, refresh, ...) sit between them — the last one stays the item-click callback.
     val constructorParameterIndex = functionParameterIndexes.last()
     val callbackRegister = argumentRegister(
         stateConstructorCall.first,
