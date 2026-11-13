@@ -42,6 +42,8 @@ import com.android.tools.smali.dexlib2.iface.instruction.ThreeRegisterInstructio
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
+import com.android.tools.smali.dexlib2.iface.reference.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.reference.StringReference
 import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethodParameter
@@ -146,12 +148,33 @@ private object NewXUserIdentifierSerializerFingerprint : Fingerprint(
 // X trims the persisted home timeline to its newest N entries on startup when this server switch is
 // positive, which drops any saved position below N before the restore runs.
 private const val HOME_START_TRIM_SWITCH = "android_xlite_home_timeline_start_trim_entries_to_keep"
+private const val HOME_START_TRIM_MIN_ENTRIES_SWITCH = "android_xlite_home_timeline_start_trim_min_entries"
 
 private object NewXHomeStartTrimFingerprint : Fingerprint(
     definingClass = "Lcom/x/repositories/urt/",
     filters =
         listOf(
             string(HOME_START_TRIM_SWITCH),
+            methodCall(
+                opcode = Opcode.INVOKE_INTERFACE,
+                name = "getInt",
+                parameters = listOf(STRING_DESCRIPTOR, "I"),
+                returnType = "I",
+            ),
+            opcode(Opcode.MOVE_RESULT, MatchAfterImmediately()),
+        ),
+)
+
+/**
+ * 12.43 replaced the entries-to-keep switch with a single min-entries switch feeding the
+ * database trim. Zeroing it would trim the timeline down to nothing, so the hook stores
+ * [Int.MAX_VALUE] instead: keep-everything is the skip-trim equivalent for this shape.
+ */
+private object NewXHomeStartTrimMinEntriesFingerprint : Fingerprint(
+    definingClass = "Lcom/x/repositories/urt/",
+    filters =
+        listOf(
+            string(HOME_START_TRIM_MIN_ENTRIES_SWITCH),
             methodCall(
                 opcode = Opcode.INVOKE_INTERFACE,
                 name = "getInt",
@@ -290,12 +313,26 @@ val restoreTimelinePositionPatch =
         )
 
         execute {
-            // A non-positive entries-to-keep makes X skip the startup trim entirely.
+            // A non-positive entries-to-keep makes X skip the startup trim entirely (12.42-);
+            // 12.43+ feeds a min-entries switch into the database trim instead, where
+            // keep-everything (Int.MAX_VALUE) is the skip equivalent.
             val homeStartTrimMatch =
                 requireExactlyOne(
                     "NewX home timeline start-trim switch read",
-                    NewXHomeStartTrimFingerprint.scopedMatchAll(),
+                    candidates =
+                        NewXHomeStartTrimFingerprint.scopedMatchAll() +
+                            NewXHomeStartTrimMinEntriesFingerprint.scopedMatchAll(),
                 )
+            val trimSkipValue =
+                if (homeStartTrimMatch.instructionMatches.any { match ->
+                        (match.instruction as? ReferenceInstruction)?.reference.let { reference ->
+                            reference is StringReference && reference.string == HOME_START_TRIM_MIN_ENTRIES_SWITCH
+                        }
+                    }) {
+                    Int.MAX_VALUE
+                } else {
+                    0
+                }
             val trimResultMatch = homeStartTrimMatch.instructionMatches.last()
             val trimResultRegister =
                 (trimResultMatch.instruction as? OneRegisterInstruction)?.registerA
@@ -313,7 +350,7 @@ val restoreTimelinePositionPatch =
                     relocateBranchTargets = false,
                 ) {
                     ifEqz(trimRead.register, Target.Original)
-                    constInt(trimResultRegister, 0)
+                    constInt(trimResultRegister, trimSkipValue)
                 }
             }
 

@@ -430,11 +430,37 @@ private fun resolvePostDetailReplyBarRenderer(): Match {
                     .map(Match::originalMethod),
             describe = { "$it" },
         )
+    val directRendererCandidates =
+        shapeMatches.filter { match ->
+            match.method.callSiteIndices(instantiator).isNotEmpty()
+        }
+    if (directRendererCandidates.isNotEmpty()) {
+        return requireExactlyOne(
+            label = "NewX post-detail reply bar renderer",
+            candidates = directRendererCandidates,
+        )
+    }
+    // 12.43 inserts one more lambda hop between the renderer and the tag lambda:
+    // renderer -> Function2 lambda invoke -> instantiator -> tag lambda. Walk one hop up from
+    // the instantiator to the classes hosting those callers, then intersect the methods that
+    // instantiate those classes with the renderer shape.
+    val lambdaCallerClasses =
+        buildSet {
+            context.classDefForEach { classDef ->
+                classDef.methods.forEach { method ->
+                    if (method.callSiteIndices(instantiator).isNotEmpty()) add(classDef.type)
+                }
+            }
+        }
     return requireExactlyOne(
         label = "NewX post-detail reply bar renderer",
-        candidates = shapeMatches.filter { match ->
-            match.method.callSiteIndices(instantiator).isNotEmpty()
-        },
+        candidates =
+            shapeMatches.filter { match ->
+                match.method.implementation?.instructions?.any { instruction ->
+                    instruction.opcode == Opcode.NEW_INSTANCE &&
+                        instruction.getReference<TypeReference>()?.toString() in lambdaCallerClasses
+                } == true
+            },
     )
 }
 
