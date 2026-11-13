@@ -16,6 +16,7 @@ import app.crimera.patches.common.classDefFlatMap
 import app.crimera.patches.common.isAssignableTo
 import app.crimera.patches.common.requireExactlyOne
 import app.crimera.patches.common.scopedMatchAll
+import app.crimera.patches.common.scopedMatchAllOrNull
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.instructions
 import app.morphe.patcher.extensions.InstructionExtensions.removeInstructions

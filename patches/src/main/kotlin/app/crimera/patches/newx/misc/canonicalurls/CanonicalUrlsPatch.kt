@@ -184,8 +184,13 @@ private fun resolveCanonicalUrlMatches(urlEntityFields: UrlEntityFields): Canoni
     val textEntityNavigationFingerprint =
         Fingerprint(
             definingClass = "Lcom/x/navigation/",
-            parameters = listOf("L", "L"),
             returnType = "V",
+            // 12.43 added a scribe parameter to the text-entity navigation handler; match any
+            // all-object parameter list and let the filter chain pin the method.
+            custom = { method, _ ->
+                val parameters = method.parameterDescriptors()
+                parameters.size >= 2 && parameters.all(String::isObjectDescriptor)
+            },
             filters =
                 listOf(
                     instanceOf(mentionType),
