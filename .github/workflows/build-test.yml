@@ -61,7 +61,7 @@ jobs:
           base=https://github.com/Capricornus007/repo/releases/download/morphe-apk-sources
           curl -fsSL -o twitter-src.apkm "$base/twitter-12.43.0-beta.01.apkm"
           curl -fsSL -o export.json "$base/morphe_all_selections.json"
-          curl -fsSL -o apply_selections.py https://raw.githubusercontent.com/Capricornus007/repo/main/morphe/apply_selections.py
+          curl -fsSL -o apply_selections.py https://raw.githubusercontent.com/Capricornus007/repo/master/morphe/apply_selections.py
 
       - name: Create options from built .mpp and apply selections
         run: |
