@@ -1759,9 +1759,31 @@ val newXProfilePhotosGalleryPatch =
             val compose = resolveComposeContracts(classDefs)
             val pagingEvent = resolvePagingEvent(classDefs)
 
+            // 12.43 splits the body into a paging adapter and the renderer: the adapter
+            // (urt/ui/b;->i) statically forwards to the renderer (urt/ui/h0;->e) and must
+            // not be hooked. Drop candidates that statically delegate to another timeline
+            // body; fall back to the unfiltered set when the split does not exist.
+            val bodyMatches = NewXTimelineBodyFingerprint.scopedMatchAll()
+            val rendererMatches = bodyMatches.filter { match ->
+                match.method.instructions.none { instruction ->
+                    if (instruction.opcode != Opcode.INVOKE_STATIC &&
+                        instruction.opcode != Opcode.INVOKE_STATIC_RANGE
+                    ) {
+                        return@none false
+                    }
+                    val reference = instruction.getReference<MethodReference>() ?: return@none false
+                    reference.definingClass.startsWith(URT_UI_SCOPE) &&
+                        reference.parameterTypes.map(CharSequence::toString).any {
+                            isDirectDescriptorInScope(it, TIMELINE_MODEL_SCOPE)
+                        } &&
+                        reference.parameterTypes.any {
+                            isDirectDescriptorInScope(it.toString(), IMMUTABLE_LIST_SCOPE)
+                        }
+                }
+            }
             val match = requireExactlyOne(
                 label = "NewX profile Photos timeline body",
-                candidates = NewXTimelineBodyFingerprint.scopedMatchAll(),
+                candidates = rendererMatches.ifEmpty { bodyMatches },
             )
             val originalMethod = match.method
             val parameters = originalMethod.parameterDescriptors()

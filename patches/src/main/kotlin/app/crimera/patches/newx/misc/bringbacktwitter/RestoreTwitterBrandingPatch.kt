@@ -185,7 +185,11 @@ private fun Method.descriptor(): String =
 
 private fun isNormalSplashDismiss(method: Method): Boolean {
     val references = method.invokeReferences().map { it.second }
-    return references.any { it.definingClass == "Landroid/view/View;" && it.name == "animate" } &&
+    // 12.43 calls animate() on the SplashScreenView receiver instead of a View-typed one,
+    // so only the animator return type identifies the call.
+    return references.any {
+        it.name == "animate" && it.returnType == "Landroid/view/ViewPropertyAnimator;"
+    } &&
         references.any { it.definingClass == "Landroid/view/ViewPropertyAnimator;" && it.name == "alpha" } &&
         references.any { it.definingClass == "Landroid/view/ViewPropertyAnimator;" && it.name == "setDuration" } &&
         references.any { it.definingClass == "Landroid/view/ViewPropertyAnimator;" && it.name == "withEndAction" }

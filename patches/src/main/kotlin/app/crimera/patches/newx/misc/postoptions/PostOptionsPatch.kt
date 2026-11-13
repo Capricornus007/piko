@@ -503,13 +503,16 @@ private fun resolveIconSwitchAssignments(method: Method): IconSwitchShape? {
             if (instruction.opcode != Opcode.SGET_OBJECT) return@mapIndexedNotNull null
             val field = instruction.getReference<FieldReference>() ?: return@mapIndexedNotNull null
             val destination = (instruction as OneRegisterInstruction).registerA
-            (field.definingClass.toString() to field.type.toString()) to (destination to index)
+            (field.definingClass.toString() to field.type.toString()) to (field to destination)
         }.groupBy({ it.first }, { it.second })
     // One preload per candidate icon plus per-arm reloads: the icon holder stands out
-    // from every other static load in the renderer by its load count alone.
+    // from every other static load in the renderer by loading several distinct fields of
+    // one type (singleton loads like Kotlin Unit repeat one field many times).
     val iconLoads =
-        loadsByType.entries.singleOrNull { (_, loads) -> loads.size >= 4 } ?: return null
-    val iconRegisters = iconLoads.value.map { (destination, _) -> destination }.toSet()
+        loadsByType.entries.singleOrNull { (_, entries) ->
+            entries.size >= 4 && entries.map { it.first.toString() }.distinct().size >= 3
+        } ?: return null
+    val iconRegisters = iconLoads.value.map { it.second }.toSet()
     val resultRegister =
         code.mapNotNull { instruction ->
             if (instruction.opcode !in OBJECT_MOVE_OPCODES) return@mapNotNull null
