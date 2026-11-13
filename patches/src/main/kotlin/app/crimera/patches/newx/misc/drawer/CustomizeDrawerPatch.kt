@@ -209,7 +209,6 @@ private object NewXDrawerContentClassFingerprint : Fingerprint(
     custom = { method, _ ->
         val parameters = method.parameterTypes.map(CharSequence::toString)
         parameters.size >= 40 &&
-            parameters.any { it.startsWith("Landroidx/compose/material3/") } &&
             parameters.count { it == COMPOSER_DESCRIPTOR } == 1 &&
             parameters.count { it == "Ljava/util/List;" } == 1 &&
             parameters.count { it == "Ljava/util/Map;" } == 1 &&

@@ -40,3 +40,13 @@ files:
       translation: patches/src/main/resources/addresources/values-%android_code%/twitter/strings.xml
       dest: '/Patches/Twitter.xml'
       skip_untranslated_strings: true
+
+    - source: patches/src/main/resources/addresources/values/newx/strings.xml
+      translation: patches/src/main/resources/addresources/values-%android_code%/newx/strings.xml
+      dest: '/Patches/NewX.xml'
+      skip_untranslated_strings: true
+
+    - source: patches/src/main/resources/addresources/values/twitter-bring-back/strings.xml
+      translation: patches/src/main/resources/addresources/values-%android_code%/twitter-bring-back/strings.xml
+      dest: '/Patches/TwitterBringBack.xml'
+      skip_untranslated_strings: true
