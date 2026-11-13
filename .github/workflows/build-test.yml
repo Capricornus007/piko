@@ -1,0 +1,99 @@
+name: Build and test patches
+
+on:
+  push:
+    branches:
+      - x-lite
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  build:
+    name: Build .mpp
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Cache Gradle
+        uses: burrunan/gradle-cache-action@v3
+
+      - name: Build with Gradle
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew --no-daemon buildAndroid
+
+      - name: Upload .mpp artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: piko-patches-mpp
+          path: patches/build/libs/patches-*.mpp
+          if-no-files-found: error
+
+  test-twitter:
+    name: Test patch Twitter 12.43.0-beta.01
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download built .mpp
+        uses: actions/download-artifact@v4
+        with:
+          name: piko-patches-mpp
+          path: .
+
+      - name: Show built bundles
+        run: ls -la patches-*.mpp
+
+      - name: Download morphe-desktop
+        run: curl -fsSL -o morphe-desktop.jar https://github.com/MorpheApp/morphe-desktop/releases/download/v2.1.1/morphe-desktop-2.1.1-all.jar
+
+      - name: Download Twitter source APK
+        run: curl -fsSL -o twitter-src.apkm https://github.com/Capricornus007/repo/releases/download/morphe-apk-sources/twitter-12.43.0-beta.01.apkm
+
+      - name: Patch Twitter with built .mpp
+        run: |
+          MPP=$(ls patches-*.mpp | head -1)
+          java -jar morphe-desktop.jar patch \
+            -p "$MPP" \
+            --force \
+            --continue-on-error \
+            -r patch-result.json \
+            -o twitter-patched.apk \
+            twitter-src.apkm
+
+      - name: Summarize patch results
+        if: always()
+        run: |
+          python3 - <<'EOF'
+          import json
+          with open('patch-result.json') as f:
+              r = json.load(f)
+          pkgs = r if isinstance(r, list) else [r]
+          for p in pkgs:
+              patches = p.get('patches', [])
+              ok = [x for x in patches if x.get('success')]
+              fail = [x for x in patches if not x.get('success')]
+              print(f"pkg={p.get('packageName')} version={p.get('patchedApkVersion') or p.get('version')}")
+              print(f"  success={len(ok)} failed={len(fail)}")
+              for x in fail:
+                  print(f"  FAIL {x.get('name')}: {str(x.get('exception'))[:300]}")
+          EOF
+
+      - name: Upload patched APK and result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: twitter-test-patched
+          path: |
+            twitter-patched.apk
+            patch-result.json
+          if-no-files-found: warn
