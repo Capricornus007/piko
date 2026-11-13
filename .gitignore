@@ -139,3 +139,4 @@ bin/
 
 # Local working notes, kept on disk for reference and never published
 docs/
+.kotlin/
