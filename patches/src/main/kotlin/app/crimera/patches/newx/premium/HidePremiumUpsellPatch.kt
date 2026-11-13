@@ -123,6 +123,27 @@ private object NewXHomeNavUpsellEnabledFingerprint : Fingerprint(
     custom = { _, classDef -> classDef.interfaces.any { it.startsWith(SUBSCRIPTIONS_SCOPE) } },
 )
 
+/**
+ * 12.43 moved the upsell gating into the home tabbed scaffold's coroutine lambda
+ * (com/x/home/tabbed/h): the premium chip renders only when the
+ * `subscriptions_upsells_premium_home_nav_enabled` feature switch reads true, so clearing that
+ * read's result hides the chip without touching the coroutine state machine's control flow.
+ */
+private object NewXHomeNavUpsellCoroutineFingerprint : Fingerprint(
+    definingClass = "Lcom/x/home/tabbed/",
+    filters =
+        listOf(
+            string("subscriptions_upsells_premium_home_nav_enabled"),
+            methodCall(
+                opcode = Opcode.INVOKE_INTERFACE,
+                name = "getBoolean",
+                parameters = listOf("Ljava/lang/String;", "Z"),
+                returnType = "Z",
+            ),
+            opcode(Opcode.MOVE_RESULT, MatchAfterImmediately()),
+        ),
+)
+
 private object NewXHomeTabbedScaffoldClassFingerprint : Fingerprint(
     definingClass = "Lcom/x/home/tabbed/",
     returnType = "V",
@@ -247,11 +268,42 @@ val hidePremiumUpsellPatch =
             val typeMatches = NewXHomeNavUpsellTypeFingerprint.scopedMatchAllOrNull().orEmpty()
             val enabledMatches = NewXHomeNavUpsellEnabledFingerprint.scopedMatchAllOrNull().orEmpty()
             val matches = typeMatches + enabledMatches
-            if (matches.size != 1) {
+            if (matches.size > 1) {
                 throw PatchException(
                     "Expected one NewX home-nav upsell checker, found ${matches.size}: " +
                         matches.joinToString { it.originalMethod.toString() },
                 )
+            }
+
+            if (matches.isEmpty()) {
+                // 12.43 coroutine checker: clear the feature-switch read result in place.
+                val coroutineMatch =
+                    requireExactlyOne(
+                        label = "NewX home-nav upsell coroutine checker",
+                        candidates = NewXHomeNavUpsellCoroutineFingerprint.scopedMatchAllOrNull().orEmpty(),
+                    )
+                coroutineMatch.method.apply {
+                    val moveMatch = coroutineMatch.instructionMatches.last()
+                    val moveInstruction =
+                        implementation?.instructions?.toList()?.getOrNull(moveMatch.index)
+                            as? OneRegisterInstruction
+                            ?: throw PatchException(
+                                "NewX home-nav upsell coroutine checker has no move-result at " +
+                                    "${moveMatch.index}: $this",
+                            )
+                    val flagRegister = moveInstruction.registerA
+                    val read =
+                        hidePremiumUpsell.injectRead(
+                            method = this,
+                            index = 0,
+                            registerConstraint = SettingReadRegisterConstraint.FOUR_BIT,
+                        )
+                    insertHook(index = moveMatch.index + 1, relocateBranchTargets = true) {
+                        ifEqz(read.register, Target.Original)
+                        constInt(flagRegister, 0)
+                    }
+                }
+                return@execute
             }
 
             val match = matches.single()
