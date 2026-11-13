@@ -17,17 +17,21 @@ internal fun MethodReference.isStringResourceLookup(): Boolean =
 /**
  * Title-based drawer row renderer. Releases add a selected flag and a trailing content lambda to
  * the same renderer, so only the stable prefix and the trailing composable fields are asserted.
+ *
+ * 12.41 and earlier: (String, icons, Function0, Modifier, ..., Composer, I, I)
+ * 12.43: a drawer-scope state parameter is inserted before Modifier and the simple overload ends
+ * with a single changed-changes int: (String, icons, Function0, drawer/*, Modifier, Composer, I)
+ * and (String, icons, Function0, drawer/*, Modifier, Z, g, g, Composer, I, I).
  */
 internal fun MethodReference.isDrawerRowRenderer(): Boolean {
     val parameters = parameterTypes.map(CharSequence::toString)
-    return returnType == "V" &&
-        parameters.size in 8..10 &&
-        parameters[0] == STRING_DESCRIPTOR &&
-        parameters[1].startsWith(ICONS_DESCRIPTOR_PREFIX) &&
-        parameters[2] == FUNCTION0_DESCRIPTOR &&
-        parameters[3] == MODIFIER_DESCRIPTOR &&
-        parameters.count { it == COMPOSER_DESCRIPTOR } == 1 &&
-        parameters.count { it == "I" } == 2 &&
-        parameters[parameters.size - 1] == "I" &&
-        parameters[parameters.size - 2] == "I"
+    if (returnType != "V") return false
+    if (parameters.size !in 7..11) return false
+    if (parameters[0] != STRING_DESCRIPTOR) return false
+    if (!parameters[1].startsWith(ICONS_DESCRIPTOR_PREFIX)) return false
+    if (parameters[2] != FUNCTION0_DESCRIPTOR) return false
+    if (parameters.count { it == COMPOSER_DESCRIPTOR } != 1) return false
+    if (parameters[parameters.size - 1] != "I") return false
+    val fourth = parameters[3]
+    return fourth == MODIFIER_DESCRIPTOR || fourth.startsWith(DRAWER_SCOPE)
 }

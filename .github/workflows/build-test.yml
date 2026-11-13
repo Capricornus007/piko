@@ -56,14 +56,25 @@ jobs:
       - name: Download morphe-desktop
         run: curl -fsSL -o morphe-desktop.jar https://github.com/MorpheApp/morphe-desktop/releases/download/v2.1.1/morphe-desktop-2.1.1-all.jar
 
-      - name: Download Twitter source APK
-        run: curl -fsSL -o twitter-src.apkm https://github.com/Capricornus007/repo/releases/download/morphe-apk-sources/twitter-12.43.0-beta.01.apkm
+      - name: Download Twitter source APK and selections
+        run: |
+          base=https://github.com/Capricornus007/repo/releases/download/morphe-apk-sources
+          curl -fsSL -o twitter-src.apkm "$base/twitter-12.43.0-beta.01.apkm"
+          curl -fsSL -o export.json "$base/export.json"
+          curl -fsSL -o apply_selections.py https://raw.githubusercontent.com/Capricornus007/repo/main/morphe/apply_selections.py
+
+      - name: Create options from built .mpp and apply selections
+        run: |
+          MPP=$(ls patches-*.mpp | head -1)
+          java -jar morphe-desktop.jar options-create -p "$MPP" -f com.twitter.android -o twitter-options.json
+          python3 apply_selections.py export.json twitter-options.json com.twitter.android
 
       - name: Patch Twitter with built .mpp
         run: |
           MPP=$(ls patches-*.mpp | head -1)
           java -jar morphe-desktop.jar patch \
             -p "$MPP" \
+            --options-file twitter-options.json \
             --force \
             --continue-on-error \
             -r patch-result.json \
@@ -77,15 +88,14 @@ jobs:
           import json
           with open('patch-result.json') as f:
               r = json.load(f)
-          pkgs = r if isinstance(r, list) else [r]
-          for p in pkgs:
-              patches = p.get('patches', [])
-              ok = [x for x in patches if x.get('success')]
-              fail = [x for x in patches if not x.get('success')]
-              print(f"pkg={p.get('packageName')} version={p.get('patchedApkVersion') or p.get('version')}")
-              print(f"  success={len(ok)} failed={len(fail)}")
-              for x in fail:
-                  print(f"  FAIL {x.get('name')}: {str(x.get('exception'))[:300]}")
+          applied = r.get('appliedPatches', [])
+          failed = r.get('failedPatches', [])
+          print(f"success={r.get('success')} applied={len(applied)} failed={len(failed)}")
+          for x in failed:
+              err = str(x.get('error', '')).splitlines()
+              print(f"FAIL {x.get('name')}: {err[0] if err else ''}")
+              for line in err[1:4]:
+                  print(f"  {line}")
           EOF
 
       - name: Upload patched APK and result
