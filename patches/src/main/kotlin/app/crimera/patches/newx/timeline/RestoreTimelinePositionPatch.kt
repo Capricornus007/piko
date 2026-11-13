@@ -42,7 +42,6 @@ import com.android.tools.smali.dexlib2.iface.instruction.ThreeRegisterInstructio
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
-import com.android.tools.smali.dexlib2.iface.reference.ReferenceInstruction
 import com.android.tools.smali.dexlib2.iface.reference.StringReference
 import com.android.tools.smali.dexlib2.iface.reference.TypeReference
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
@@ -325,9 +324,8 @@ val restoreTimelinePositionPatch =
                 )
             val trimSkipValue =
                 if (homeStartTrimMatch.instructionMatches.any { match ->
-                        (match.instruction as? ReferenceInstruction)?.reference.let { reference ->
-                            reference is StringReference && reference.string == HOME_START_TRIM_MIN_ENTRIES_SWITCH
-                        }
+                        match.instruction.getReference<StringReference>()?.string ==
+                            HOME_START_TRIM_MIN_ENTRIES_SWITCH
                     }) {
                     Int.MAX_VALUE
                 } else {

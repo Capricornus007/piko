@@ -190,6 +190,23 @@ private val NEWX_DRAWER_MENU_ITEM_WITH_AUXILIARY_CONTENT_PARAMETERS =
         "I",
     )
 
+// 12.43 inserts the Modifier before the selected flag and turns the trailing content lambdas
+// into compose-internal lambda types: (String, icon, click, state, Modifier, Z, g, g, Composer, I, I).
+private val NEWX_DRAWER_MENU_ITEM_WITH_SELECTED_AND_TRAILING_LAMBDAS_PARAMETERS =
+    listOf(
+        "Ljava/lang/String;",
+        "L",
+        FUNCTION0_DESCRIPTOR,
+        "L",
+        "L",
+        "Z",
+        "L",
+        "L",
+        COMPOSER_DESCRIPTOR,
+        "I",
+        "I",
+    )
+
 // 12.25 moved footer rows to the shared title/icon/click renderer.
 private val NEWX_DRAWER_SHARED_FOOTER_ITEM_PARAMETERS =
     listOf(
@@ -230,6 +247,12 @@ private object NewXDrawerMenuItemWithAuxiliaryContentFingerprint : Fingerprint(
     classFingerprint = NewXDrawerContentClassFingerprint,
     returnType = "V",
     parameters = NEWX_DRAWER_MENU_ITEM_WITH_AUXILIARY_CONTENT_PARAMETERS,
+)
+
+private object NewXDrawerMenuItemWithSelectedAndTrailingLambdasFingerprint : Fingerprint(
+    classFingerprint = NewXDrawerContentClassFingerprint,
+    returnType = "V",
+    parameters = NEWX_DRAWER_MENU_ITEM_WITH_SELECTED_AND_TRAILING_LAMBDAS_PARAMETERS,
 )
 
 // FOOTER ROWS: settings/help/feedback/media/imprint/debug pass their localized title.
@@ -1412,7 +1435,9 @@ val customizeNewXDrawerPatch =
 
             val menuMatches =
                 (NewXDrawerMenuItemFingerprint.scopedMatchAllOrNull().orEmpty() +
-                    NewXDrawerMenuItemWithAuxiliaryContentFingerprint.scopedMatchAllOrNull().orEmpty())
+                    NewXDrawerMenuItemWithAuxiliaryContentFingerprint.scopedMatchAllOrNull().orEmpty() +
+                    NewXDrawerMenuItemWithSelectedAndTrailingLambdasFingerprint.scopedMatchAllOrNull()
+                        .orEmpty())
                     .distinctBy { it.originalMethod.toString() }
             val menuMatch =
                 requireExactlyOne(
