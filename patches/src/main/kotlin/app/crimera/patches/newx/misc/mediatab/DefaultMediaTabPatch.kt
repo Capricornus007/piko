@@ -205,11 +205,30 @@ val newXDefaultMediaTabPatch =
                 methodInstructions.withIndex().filter { (_, instruction) ->
                     isPendingSubTabStore(instruction, tabTypeDescriptor)
                 }
+            // 12.43 also stores the raw initial-sub-tab constructor parameter into a plain
+            // tab-type field before the pending logic runs. The real pending store holds a
+            // branch-merged local, not the parameter register, so drop the direct parameter
+            // store when it makes the candidates ambiguous. A single candidate (12.29 shape)
+            // is kept as-is.
             val pendingStore =
-                requireExactlyOne(
-                    label = "combined profile timeline pending sub-tab store",
-                    candidates = pendingStoreCandidates,
-                )
+                if (pendingStoreCandidates.size <= 1) {
+                    requireExactlyOne(
+                        label = "combined profile timeline pending sub-tab store",
+                        candidates = pendingStoreCandidates,
+                    )
+                } else {
+                    val parameterRegisters = method.parameterTypes.size + 1
+                    val initialSubTabRegister =
+                        method.implementation?.registerCount?.let { it - parameterRegisters + 2 }
+                    requireExactlyOne(
+                        label = "combined profile timeline pending sub-tab store",
+                        candidates =
+                            pendingStoreCandidates.filter { (_, instruction) ->
+                                (instruction as? TwoRegisterInstruction)?.registerA !=
+                                    initialSubTabRegister
+                            },
+                    )
+                }
             val pendingStoreInstruction =
                 pendingStore.value as? TwoRegisterInstruction
                     ?: throw PatchException(
