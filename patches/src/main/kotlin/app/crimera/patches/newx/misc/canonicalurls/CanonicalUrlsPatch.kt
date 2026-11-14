@@ -1114,7 +1114,6 @@ private fun patchCardUrlResolver(
         method.implementation?.registerCount
             ?: throw PatchException("Card URL resolver has no implementation: $method")
     val postLocal = originalRegisterCount
-    val postParamRegister = method.p0Register + 1
     val mutable =
         method.cloneMutable(
             additionalRegisters = method.numberOfParameterRegisters + 1,
@@ -1122,6 +1121,13 @@ private fun patchCardUrlResolver(
     val classDef = context.mutableClassDefBy(method.definingClass)
     classDef.methods.remove(method)
     classDef.methods.add(mutable)
+    // cloneMutable enlarges the register space: the real parameters move to the top of the
+    // register window and the clone's entry restores them into their old positions. The
+    // index-0 hook below runs BEFORE those restores, so it must read the parameter from the
+    // cloned layout, where p0Register resolves against the enlarged registerCount. Reading the
+    // pre-clone position instead left the move sourcing an undefined register and ART rejected
+    // the whole class with VerifyError at the first instruction.
+    val postParamRegister = mutable.p0Register + 1
 
     // Re-discover the transform call on the mutable clone: the builder conversion can shift
     // instruction indices relative to the immutable fingerprint match.
