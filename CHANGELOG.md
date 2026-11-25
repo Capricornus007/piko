@@ -1,3 +1,9 @@
+## [3.11.4](https://github.com/Capricornus007/piko/compare/v3.11.3...v3.11.4) (2026-11-25)
+
+### 🐛 Bug Fixes
+
+* settings 容錯改 catch Throwable（document() 拋的是裸 FileNotFoundException） ([5a6a53d](https://github.com/Capricornus007/piko/commit/5a6a53d3126139445a3ecb1f15cf5f282297e8e2)), references [#46](https://github.com/Capricornus007/piko/issues/46) [#44](https://github.com/Capricornus007/piko/issues/44)
+
 ## [3.11.3](https://github.com/Capricornus007/piko/compare/v3.11.2...v3.11.3) (2026-11-25)
 
 ### 🐛 Bug Fixes

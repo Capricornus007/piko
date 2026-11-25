@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-11-25T22:26:53",
-  "description": "## [3.11.3](https://github.com/Capricornus007/piko/compare/v3.11.2...v3.11.3) (2026-11-25)\n\n### 🐛 Bug Fixes\n\n* **release:** checkout 改完整歷史（fetch-depth: 0） ([0d932dc](https://github.com/Capricornus007/piko/commit/0d932dc55f8e3b238f4650004372e09c4a1ca263))\n* settings 容錯改 catch PatchException（document() 會把 IOException 包成 PatchException） ([d2a8d9d](https://github.com/Capricornus007/piko/commit/d2a8d9d0f484b781f5e4deac0a35c9f80222330f)), references [#44](https://github.com/Capricornus007/piko/issues/44)",
-  "download_url": "https://github.com/Capricornus007/piko/releases/download/v3.11.3/patches-3.11.3.mpp",
-  "signature_download_url": "https://github.com/Capricornus007/piko/releases/download/v3.11.3/patches-3.11.3.mpp.asc",
-  "version": "3.11.3"
+  "created_at": "2026-11-25T22:51:27",
+  "description": "## [3.11.4](https://github.com/Capricornus007/piko/compare/v3.11.3...v3.11.4) (2026-11-25)\n\n### 🐛 Bug Fixes\n\n* settings 容錯改 catch Throwable（document() 拋的是裸 FileNotFoundException） ([5a6a53d](https://github.com/Capricornus007/piko/commit/5a6a53d3126139445a3ecb1f15cf5f282297e8e2)), references [#46](https://github.com/Capricornus007/piko/issues/46) [#44](https://github.com/Capricornus007/piko/issues/44)",
+  "download_url": "https://github.com/Capricornus007/piko/releases/download/v3.11.4/patches-3.11.4.mpp",
+  "signature_download_url": "https://github.com/Capricornus007/piko/releases/download/v3.11.4/patches-3.11.4.mpp.asc",
+  "version": "3.11.4"
 }
