@@ -27,20 +27,32 @@ internal val settingsResourcePatch =
                 }
             }
 
-            document("res/xml/settings_root.xml").use { editor ->
-                val parent = editor.getElementsByTagName("PreferenceScreen").item(0) as Element
+            // 2026-11-26：12.46.1-prod 移除了 res/xml/settings_root.xml（settings root 改為
+            // com.x.settings.j.c() 代碼構建，見該檔 259-264 行的 List<common.s> 組裝）。
+            // 此注入點消失時若直接拋例外，本 patch 失敗 → 所有依賴 settingsPatch 的
+            // patch 全部連坐（morphe #40 實測 71 個失敗）。改為容錯跳過；
+            // settings 列表的新入口由 SettingsEntryPatch（j.c() hook）補上。
+            try {
+                document("res/xml/settings_root.xml").use { editor ->
+                    val parent = editor.getElementsByTagName("PreferenceScreen").item(0) as Element
 
-                val prefMod = editor.createElement("Preference")
-                prefMod.setAttribute("android:icon", "@drawable/ic_vector_settings_stroke")
-                prefMod.setAttribute("android:title", "@string/piko_title_settings")
-                prefMod.setAttribute("android:key", "pref_mod")
-                prefMod.setAttribute("android:order", "110")
+                    val prefMod = editor.createElement("Preference")
+                    prefMod.setAttribute("android:icon", "@drawable/ic_vector_settings_stroke")
+                    prefMod.setAttribute("android:title", "@string/piko_title_settings")
+                    prefMod.setAttribute("android:key", "pref_mod")
+                    prefMod.setAttribute("android:order", "110")
 
-                parent.appendChild(prefMod)
+                    parent.appendChild(prefMod)
+                }
+            } catch (_: java.io.FileNotFoundException) {
+                // settings_root.xml 已不存在（新版代碼構建 settings），跳過 XML 注入
             }
 
             // credits aero
-            document("res/layout/main_activity_app_bar.xml").use { editor ->
+            // 2026-11-26：main_activity_app_bar.xml 同樣已從 12.46.1-prod 移除（arsc 實查），
+            // 同樣容錯跳過，避免連坐。
+            try {
+                document("res/layout/main_activity_app_bar.xml").use { editor ->
                 val parent = editor.getElementsByTagName("FrameLayout").item(1) as Element
 
                 val sideBtn =
@@ -57,6 +69,9 @@ internal val settingsResourcePatch =
                 sideBtn.setAttribute("android:layout_gravity", "bottom|right")
 
                 parent.appendChild(sideBtn)
+                }
+            } catch (_: java.io.FileNotFoundException) {
+                // main_activity_app_bar.xml 已不存在（12.46.1-prod arsc 實查），跳過
             }
 
             // Add piko settings to the launcher icon long-press shortcuts
