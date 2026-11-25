@@ -18,6 +18,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          # backmerge 插件的 git rebase 需要完整歷史；淺檢出（預設 depth=1）
+          # 會讓 success 步驟的 rebase origin/main 失敗（run 45710367602 實錘，
+          # 發布本身已成功、僅 dev 同步炸）。
+          fetch-depth: 0
 
       - name: Setup Java
         uses: actions/setup-java@v6
