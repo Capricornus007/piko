@@ -1,3 +1,13 @@
+## [3.11.2](https://github.com/Capricornus007/piko/compare/v3.11.1...v3.11.2) (2026-11-25)
+
+### 🐛 Bug Fixes
+
+* navbar getFreeRegisterProvider 呼叫簽名修正 ([f0c1c5c](https://github.com/Capricornus007/piko/commit/f0c1c5c3923555ddbca91dafdeded269232754a3))
+* navbar/profiletabs 編譯錯誤修復（112 個 Kotlin 錯誤） ([bba9308](https://github.com/Capricornus007/piko/commit/bba93080082766f90199c67e09b2e31db3053299))
+* **release:** force conventional-changelog-writer@9 via npm overrides ([2c717d0](https://github.com/Capricornus007/piko/commit/2c717d0a2c8544f0ab232f672a348a5a79ce66b3))
+* **release:** 棄用 semantic-release-action，直接 npx 原地跑 ([c925930](https://github.com/Capricornus007/piko/commit/c9259303dc8dba69ad453919fcc9bb9a6a6984ee))
+* ship Twitter 12.46.1-prod adaptation (fingerprints, settings entry, resource tolerance) ([315685f](https://github.com/Capricornus007/piko/commit/315685fdd8bcc38ad56fb939792f6868a74f833c)), references [40/#42](https://github.com/Capricornus007/piko/issues/42)
+
 ## [3.11.1](https://github.com/crimera/piko/compare/v3.11.0...v3.11.1) (2026-11-10)
 
 ### 🐛 Bug Fixes
