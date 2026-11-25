@@ -79,7 +79,7 @@ val customiseNavBarPatch =
             val mapRegister =
                 method.getInstruction<Instruction35c>(w0InitIndex).registerG
             val freeRegister =
-                getFreeRegisterProvider(w0InitIndex, 1, mapRegister).getFreeRegister()
+                method.getFreeRegisterProvider(w0InitIndex, 1, listOf(mapRegister)).getFreeRegister()
 
             method.addInstructions(
                 w0InitIndex,
