@@ -45,10 +45,11 @@ internal val settingsResourcePatch =
 
                     parent.appendChild(prefMod)
                 }
-            } catch (_: PatchException) {
+            } catch (t: Throwable) {
                 // settings_root.xml 已不存在（新版代碼構建 settings），跳過 XML 注入。
-                // 注意：patcher 的 document() 把 IOException 包成 PatchException 拋出
-                // （morphe #44 實錘——catch FileNotFoundException 永遠接不到）。
+                // document() 拋的是裸 FileNotFoundException（#46 堆疊實錘：框架才做
+                // PatchException 包裝）；catch Throwable 兜住所有包裝/類載入變體。
+                println("settings_root.xml 注入跳過：${t::class.simpleName}: ${t.message}")
             }
 
             // credits aero
@@ -73,8 +74,9 @@ internal val settingsResourcePatch =
 
                 parent.appendChild(sideBtn)
                 }
-            } catch (_: PatchException) {
+            } catch (t: Throwable) {
                 // main_activity_app_bar.xml 已不存在（12.46.1-prod arsc 實查），跳過
+                println("main_activity_app_bar.xml 注入跳過：${t::class.simpleName}: ${t.message}")
             }
 
             // Add piko settings to the launcher icon long-press shortcuts
