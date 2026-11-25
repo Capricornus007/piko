@@ -13,6 +13,8 @@ import app.crimera.patches.twitter.utils.enableSettings
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
+import app.morphe.patcher.extensions.InstructionExtensions.instructions
+import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.patch
 import app.morphe.patcher.util.getReference
 import com.android.tools.smali.dexlib2.Opcode
@@ -50,27 +52,28 @@ val customiseProfileTabsPatch =
         execute {
 
             val method = CustomiseProfileTabsFingerprint.method
-            val instructions = method.instructions
+            val instructions = method.instructions.toList()
 
             // tab 組裝迴圈內的 ArrayList.add（全方法僅此一處），其 receiver 即列表暫存器
             val addIndex =
                 instructions.indexOfFirst {
                     it.opcode == Opcode.INVOKE_VIRTUAL &&
-                        it.getReference<MethodReference>().let { r ->
+                        it.getReference<MethodReference>()?.let { r ->
                             r.definingClass == "Ljava/util/ArrayList;" && r.name == "add"
-                        }
+                        } == true
                 }
 
             // 迴圈結束後第一個 z1;->f，ArrayList 作為初始值傳入；於呼叫前轉換列表
             val flowIndex =
-                instructions.indexOfFirst {
-                    it.location.index > addIndex &&
-                        it.opcode == Opcode.INVOKE_STATIC &&
-                        it.getReference<MethodReference>().let { r ->
+                instructions.withIndex().firstOrNull { (idx, ins) ->
+                    idx > addIndex &&
+                        ins.opcode == Opcode.INVOKE_STATIC &&
+                        ins.getReference<MethodReference>()?.let { r ->
                             r.definingClass == "Lkotlinx/coroutines/flow/z1;" && r.name == "f"
-                        }
-                }
+                        } == true
+                }?.index ?: throw PatchException("profiletabs: flow z1.f 未找到")
 
+            if (addIndex < 0) throw PatchException("profiletabs: ArrayList.add 未找到")
             val listRegister =
                 method.getInstruction<Instruction35c>(addIndex).registerC
 

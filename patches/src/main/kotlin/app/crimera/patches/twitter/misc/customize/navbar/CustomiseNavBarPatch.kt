@@ -14,6 +14,8 @@ import app.crimera.patches.twitter.utils.flagSettings
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
+import app.morphe.patcher.extensions.InstructionExtensions.instructions
+import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.patch
 import app.morphe.patcher.util.getFreeRegisterProvider
 import app.morphe.patcher.util.getReference
@@ -60,19 +62,20 @@ val customiseNavBarPatch =
         execute {
 
             val method = CustomiseNavBarFingerprint.method
-            val instructions = method.instructions
+            val instructions = method.instructions.toList()
 
             // 定位 LandingBadgesState(w0) 建構呼叫（方法內唯一），第 4 個參數即 tabData
             val w0InitIndex =
                 instructions.indexOfFirst {
                     it.opcode == Opcode.INVOKE_DIRECT &&
-                        it.getReference<MethodReference>().let { r ->
+                        it.getReference<MethodReference>()?.let { r ->
                             r.definingClass == "Lcom/x/main/api/landing/w0;" && r.name == "<init>"
-                        }
+                        } == true
                 }
 
             // w0.<init>(Map, I, Z, LinkedHashMap) 共 5 個引數（含 receiver），
             // 第 5 個引數（registerG）即 tabData LinkedHashMap
+            if (w0InitIndex < 0) throw PatchException("navbar: w0 <init> 未找到")
             val mapRegister =
                 method.getInstruction<Instruction35c>(w0InitIndex).registerG
             val freeRegister =
