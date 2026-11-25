@@ -38,10 +38,22 @@ jobs:
         run: npm install
 
       - name: Release
-        uses: cycjimmy/semantic-release-action@v8
         id: release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # 2026-11-26：棄用 cycjimmy/semantic-release-action@v8——它自帶的舊版
+        # conventional-changelog-writer 會遮住 repo 的 v10 preset 需求
+        # （「Missing helper: requires conventional-changelog-writer@9 or newer」，
+        # run 45705858041/45706492895 實錘，npm overrides 也救不了：舊 writer
+        # 在 action 自己的安裝目錄裡）。repo 的 package.json 已含全套
+        # semantic-release 26 + 插件 + vendor shim，直接 npx 原地跑。
+        run: |
+          npx --no-install semantic-release
+          TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          {
+            echo "new_release_published=$([ -n "$TAG" ] && echo true || echo false)"
+            echo "new_release_git_tag=$TAG"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Attest
         if: steps.release.outputs.new_release_published == 'true'
