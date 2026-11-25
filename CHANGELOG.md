@@ -1,3 +1,10 @@
+## [3.11.3](https://github.com/Capricornus007/piko/compare/v3.11.2...v3.11.3) (2026-11-25)
+
+### 🐛 Bug Fixes
+
+* **release:** checkout 改完整歷史（fetch-depth: 0） ([0d932dc](https://github.com/Capricornus007/piko/commit/0d932dc55f8e3b238f4650004372e09c4a1ca263))
+* settings 容錯改 catch PatchException（document() 會把 IOException 包成 PatchException） ([d2a8d9d](https://github.com/Capricornus007/piko/commit/d2a8d9d0f484b781f5e4deac0a35c9f80222330f)), references [#44](https://github.com/Capricornus007/piko/issues/44)
+
 ## [3.11.2](https://github.com/Capricornus007/piko/compare/v3.11.1...v3.11.2) (2026-11-25)
 
 ### 🐛 Bug Fixes
