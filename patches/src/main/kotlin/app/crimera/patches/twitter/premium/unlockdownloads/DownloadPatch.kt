@@ -26,6 +26,13 @@ import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.TwoRegisterInstruction
 
+// [12.46.1 失配] 舊目標（tweetview mediaoptionssheet 大方法，含 "mediaEntity" +
+// "media_options_sheet"）已隨 com.twitter.* 舊命名空間整個移除，"mediaEntity" 字串
+// 在 APK 中不存在（dex 二進制 grep 確認）。新版的下載 premium 閘門改為
+// com/x/video/tab/n0.java:688 的 ((com.x.subscriptions.a0) this.l.a).g() invoke 呼叫
+// （非 IGET_BOOLEAN 欄位讀取），gif 類型分支也改由 MediaContentGif model 承接，
+// 與本 fingerprint 假設的注入形狀（第一個 IF_EQ + 移除 IGET_BOOLEAN）不相容。
+// 待重寫注入邏輯後再重新定位。
 private object DownloadPatchFingerprint : Fingerprint(
     strings =
         listOf(
@@ -34,21 +41,34 @@ private object DownloadPatchFingerprint : Fingerprint(
         ),
 )
 
+// [12.46.1 失配] "mediaEntity" 字串已不存在；新版 com.x.media.download.d 下載器
+// 內也沒有對應的 Z 回傳 premium/可下載檢查（閘門上移到 UI 層 n0.java:688）。
 private object FileDownloaderFingerprint : Fingerprint(
     returnType = "Z",
     filters = OpcodesFilter.opcodesToFilters(Opcode.IF_EQZ),
     strings = listOf("mediaEntity", "url"),
 )
 
-// credits @revanced
+// [12.46.1 失配] "captionsState" 字串已自 APK 移除（dex 二進制 grep 確認），
+// 找不到等價的 immersive bottom sheet 建構子字串錨點。
+// 新版 immersive 下載可用性改由 com/x/android/main/helpers/k8.java:162 以
+// MediaContentVideo.isDownloadable 欄位直接建構 com.x.video.tab.l3 (ImmersiveSharedVideo)。
 private object ImmersiveBottomSheetPatchFingerprint : Fingerprint(
     accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.CONSTRUCTOR),
     returnType = "V",
     strings = listOf("captionsState"),
 )
 
+// [12.46.1 重定位] 舊定義類別 Lcom/twitter/model/json/core/JsonMediaEntity; 已隨
+// com.twitter.* 命名空間移除。新等價物為 MediaContentVideo（com/x/models/y4.java），
+// 其 h()（com/x/models/media/s3 介面的 isDownloadable getter）回傳欄位 j：
+//   public final boolean h() { return this.j; }  // y4.java:189-192
+// 下載點擊處以 s3Var2.h() 判斷可否下載（com/x/video/tab/n0.java:695）。
+// 強制 h() 回傳 true 即「強制影片可下載」，與舊注入邏輯（最後一個 IGET_BOOLEAN
+// 後補 const true）完全相容。
 private object MediaEntityFingerprint : Fingerprint(
-    definingClass = "Lcom/twitter/model/json/core/JsonMediaEntity;",
+    definingClass = "Lcom/x/models/y4;",
+    name = "h",
     filters = OpcodesFilter.opcodesToFilters(Opcode.IGET_BOOLEAN),
 )
 

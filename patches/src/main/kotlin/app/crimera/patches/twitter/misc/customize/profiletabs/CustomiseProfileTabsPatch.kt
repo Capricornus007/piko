@@ -12,20 +12,30 @@ import app.crimera.patches.twitter.utils.Constants.CUSTOMISE_DESCRIPTOR
 import app.crimera.patches.twitter.utils.enableSettings
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
-import app.morphe.patcher.extensions.InstructionExtensions.addInstructionsWithLabels
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
-import app.morphe.patcher.extensions.InstructionExtensions.instructions
-import app.morphe.patcher.extensions.InstructionExtensions.removeInstruction
 import app.morphe.patcher.patch.patch
-import app.morphe.patcher.util.smali.ExternalLabel
+import app.morphe.patcher.util.getReference
 import com.android.tools.smali.dexlib2.Opcode
-import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction35c
+import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 
+// 2026-11-26：12.46.1-prod 移除了舊的客戶端 profile tab 列表建構方法——
+// 舊錨點字串 blue_business_affiliates_list_consumption_ui_enabled 已從 dex 消失
+// （grep -al 於所有 base/*.dex 均無命中），tab 可用性改為伺服器驅動：
+// List<com.x.profile.c1> 由導航設定（y0）/URT 帶入，全 dex 掃描確認沒有任何方法
+// 以常數組裝該列表（僅剩 switch-map 與序列化輔助）。
+// 客戶端最後一個 tab 列表組裝點是 Lcom/x/profile/timeline/e;-><init>（classes7.dex）：
+// 它將傳入列表過濾（Highlights 依 flow c 條件）後收集進 ArrayList，
+// 再作為第 4 個參數傳給 kotlinx/coroutines/flow/z1;->f 建立狀態流（欄位 e.v）。
+// 該方法以此唯一字串定位（全 app 僅此一處）。
+//
+// 注意：擴展層 Customise.profiletabs(ArrayList) 仍以反射讀取項目的 "g" 欄位（舊模型
+// 的 String key），而新模型項目是 c1 列舉（無 "g" 欄位）→ 會走 catch 分支安全地
+// 原樣返回。要讓本補丁真正生效，擴展層需改為比對 c1 列舉名稱／getScribeSection()。
 private object CustomiseProfileTabsFingerprint : Fingerprint(
-    returnType = "Ljava/util/ArrayList;",
     strings =
         listOf(
-            "blue_business_affiliates_list_consumption_ui_enabled",
+            "Combined timeline requires at least two sub-tabs",
         ),
 )
 
@@ -42,54 +52,35 @@ val customiseProfileTabsPatch =
             val method = CustomiseProfileTabsFingerprint.method
             val instructions = method.instructions
 
-            val returnObj_loc = instructions.last { it.opcode == Opcode.RETURN_OBJECT }.location.index
-            val r0 = method.getInstruction<OneRegisterInstruction>(returnObj_loc).registerA
+            // tab 組裝迴圈內的 ArrayList.add（全方法僅此一處），其 receiver 即列表暫存器
+            val addIndex =
+                instructions.indexOfFirst {
+                    it.opcode == Opcode.INVOKE_VIRTUAL &&
+                        it.getReference<MethodReference>().let { r ->
+                            r.definingClass == "Ljava/util/ArrayList;" && r.name == "add"
+                        }
+                }
+
+            // 迴圈結束後第一個 z1;->f，ArrayList 作為初始值傳入；於呼叫前轉換列表
+            val flowIndex =
+                instructions.indexOfFirst {
+                    it.location.index > addIndex &&
+                        it.opcode == Opcode.INVOKE_STATIC &&
+                        it.getReference<MethodReference>().let { r ->
+                            r.definingClass == "Lkotlinx/coroutines/flow/z1;" && r.name == "f"
+                        }
+                }
+
+            val listRegister =
+                method.getInstruction<Instruction35c>(addIndex).registerC
 
             val METHOD =
                 """
-                invoke-static {v$r0}, $CUSTOMISE_DESCRIPTOR;->profiletabs(Ljava/util/ArrayList;)Ljava/util/ArrayList;
-                move-result-object v$r0
+                invoke-static {v$listRegister}, $CUSTOMISE_DESCRIPTOR;->profiletabs(Ljava/util/ArrayList;)Ljava/util/ArrayList;
+                move-result-object v$listRegister
                 """.trimIndent()
 
-            method.addInstructions(returnObj_loc, METHOD)
-
-            val last_invoke_static = instructions.last { it.opcode == Opcode.INVOKE_STATIC }
-
-            val last_if_nez_loc = instructions.last { it.opcode == Opcode.IF_NEZ }.location.index
-            val r2 = method.getInstruction<OneRegisterInstruction>(last_if_nez_loc).registerA
-
-            val op = instructions[last_if_nez_loc - 1].opcode
-
-            if (op == Opcode.CONST_4) { // before 10.43
-                val last_if_eqz = instructions.last { it.opcode == Opcode.IF_EQZ }.location.index
-                val r1 = method.getInstruction<OneRegisterInstruction>(last_if_eqz).registerA
-
-                // it works don't ask me how
-                method.removeInstruction(last_if_eqz)
-                method.removeInstruction(last_if_eqz)
-                method.removeInstruction(last_if_eqz)
-
-                method.addInstructionsWithLabels(
-                    last_if_eqz,
-                    """
-                    if-eqz v$r1, :check2
-                    const/4 v$r2, 0x1
-                    :check2
-                    if-nez v$r2, :check1
-                    """.trimIndent(),
-                    ExternalLabel("check1", last_invoke_static),
-                )
-            } else { // after 10.43
-                method.removeInstruction(last_if_nez_loc)
-
-                method.addInstructionsWithLabels(
-                    last_if_nez_loc,
-                    """
-                    if-nez v$r2, :check1
-                    """.trimIndent(),
-                    ExternalLabel("check1", last_invoke_static),
-                )
-            }
+            method.addInstructions(flowIndex, METHOD)
             enableSettings("profileTabCustomisation")
         }
     }

@@ -16,13 +16,22 @@ import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.patch
 import app.morphe.patcher.util.smali.ExternalLabel
 
+// 2026-11-26：12.46.1-prod 移除了本地搜尋建議 SQLite DB——"search_queries" 表、
+// "findSearchQuery: "、"LOWER(query)=LOWER(?) AND ..." 在所有 dex 中皆已消失，
+// 且全 APK 無任何 CREATE TABLE 建立搜尋相關資料表。
+// 最近搜尋改以 kotlinx.serialization（com.x.models.search.RecentSearchData，
+// 見 com/x/models/search/p.java）存入 DataStore key "search_recent_v3"
+// （com/x/repositories/search/q.java:15），寫入唯一入口為
+// q.c(RecentSearchData, SuspendLambda)（內部經 account.e case 14 寫 DataStore）。
 private object SearchDbInsertFingerprint : Fingerprint(
-    strings =
+    definingClass = "Lcom/x/repositories/search/q;",
+    name = "c",
+    parameters =
         listOf(
-            "search_queries",
-            "findSearchQuery: ",
-            "LOWER(query)=LOWER(?) AND LOWER(name)=LOWER(?) AND type=? AND latitude=? AND longitude=?",
+            "Lcom/x/models/search/r;",
+            "Lkotlin/coroutines/jvm/internal/SuspendLambda;",
         ),
+    returnType = "Ljava/lang/Object;",
 )
 
 @Suppress("unused")
@@ -46,7 +55,8 @@ val pauseSearchSuggestion =
                     invoke-static {}, $PREF_DESCRIPTOR;->pauseSearchSuggestions()Z
                     move-result v0
                     if-eqz v0, :cond_1212
-                    return-void
+                    sget-object v0, Lkotlin/Unit;->a:Lkotlin/Unit;
+                    return-object v0
                     """.trimIndent(),
                     ExternalLabel("cond_1212", firstInstruction),
                 )

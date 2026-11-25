@@ -18,10 +18,12 @@ import app.morphe.patcher.patch.patch
 import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 
+// 2026-11-26：12.46.1-prod 把方法改名 invoke → drawerItems、簽名改 (DrawerState)List，
+// feature flag 字符串 android_global_navigation_top_level_monetization_enabled 已從 dex 消失
+// （com/x/main/landing/v.java 的反射元數據實錘新名與簽名）。
 private object customiseNavBarFingerprint : Fingerprint(
-    name = "invoke",
-    returnType = "Ljava/lang/Object",
-    strings = listOf("android_global_navigation_top_level_monetization_enabled"),
+    name = "drawerItems",
+    returnType = "Ljava/util/List",
 )
 
 @Suppress("unused")

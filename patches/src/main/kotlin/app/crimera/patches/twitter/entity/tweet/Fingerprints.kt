@@ -17,10 +17,12 @@ import com.android.tools.smali.dexlib2.Opcode
 
 private const val ENTITY_TWEET_DEFINING_CLASS = "${ENTITY_DESCRIPTOR}Tweet"
 
+// Old anchor "https://x.com/%1\$s/status/%2\$d" was removed; the tweet model class is now
+// com.x.models.u0 (CanonicalPost), identified by its toString template.
 internal object TweetObjectFingerprint : Fingerprint(
     filters =
         listOf(
-            string("https://x.com/%1\$s/status/%2\$d"),
+            string("CanonicalPost(id="),
         ),
 )
 
@@ -101,15 +103,20 @@ internal object TweetNamesFingerprint : Fingerprint(
         ),
 )
 
+// Old "EntityList{mEntities=" is gone; the entity list class is now com.x.models.text.g0
+// (PostEntityList, fields: mentions/urls/media/hashtags/cashtags/timestamps).
+// NOTE: media list is the 3rd List field ("media"), the old "first List field" heuristic
+// in TweetEntityPatch.kt no longer picks it.
 internal object TweetMediaEntityClassFingerprint : Fingerprint(
-    strings = listOf("EntityList{mEntities="),
+    strings = listOf("PostEntityList(mentions="),
 )
 
+// Old "NoteTweet(id=" / ", text=" are gone; the note tweet class is now
+// com.x.models.notes.j (NotePostResult.NotePost, text = its only String field).
 internal object LongTweetObjectFingerprint : Fingerprint(
     strings =
         listOf(
-            "NoteTweet(id=",
-            ", text=",
+            "NotePost(postEntityList=",
         ),
 )
 
