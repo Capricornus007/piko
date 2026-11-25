@@ -8,6 +8,7 @@ package app.crimera.patches.twitter.misc.settings
 
 import app.morphe.patcher.patch.document
 import app.morphe.patcher.patch.packageMetadata
+import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.patch
 import app.morphe.util.ResourceGroup
 import app.morphe.util.copyResources
@@ -44,8 +45,10 @@ internal val settingsResourcePatch =
 
                     parent.appendChild(prefMod)
                 }
-            } catch (_: java.io.FileNotFoundException) {
-                // settings_root.xml 已不存在（新版代碼構建 settings），跳過 XML 注入
+            } catch (_: PatchException) {
+                // settings_root.xml 已不存在（新版代碼構建 settings），跳過 XML 注入。
+                // 注意：patcher 的 document() 把 IOException 包成 PatchException 拋出
+                // （morphe #44 實錘——catch FileNotFoundException 永遠接不到）。
             }
 
             // credits aero
@@ -70,7 +73,7 @@ internal val settingsResourcePatch =
 
                 parent.appendChild(sideBtn)
                 }
-            } catch (_: java.io.FileNotFoundException) {
+            } catch (_: PatchException) {
                 // main_activity_app_bar.xml 已不存在（12.46.1-prod arsc 實查），跳過
             }
 
