@@ -1,3 +1,9 @@
+## [3.11.10](https://github.com/Capricornus007/piko/compare/v3.11.9...v3.11.10) (2026-11-26)
+
+### 🐛 Bug Fixes
+
+* HideNavBarBadges 改錨 Compose TabData 構造子（m1(String,int,boolean) p2=badgeCount） ([862f92a](https://github.com/Capricornus007/piko/commit/862f92af2a077181e106144ab3bde66a478fe489))
+
 ## [3.11.9](https://github.com/Capricornus007/piko/compare/v3.11.8...v3.11.9) (2026-11-26)
 
 ### 🐛 Bug Fixes
