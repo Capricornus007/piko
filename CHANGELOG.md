@@ -1,3 +1,10 @@
+## [3.11.16](https://github.com/Capricornus007/piko/compare/v3.11.15...v3.11.16) (2026-11-26)
+
+### 🐛 Bug Fixes
+
+* **x46:** HideAds findFreeRegister 補第二參數（修 CI 編譯 [#36](https://github.com/Capricornus007/piko/issues/36)） ([dfe4625](https://github.com/Capricornus007/piko/commit/dfe46256684487e2b8e57ddef856b9c570ef2360))
+* **x46:** HidePromotedTrend 換錨 Apollo ll1.c()（jadx+dex 實錘，高信心） ([b5a606e](https://github.com/Capricornus007/piko/commit/b5a606e6653e501554863de28d4924e565b74024))
+
 ## [3.11.15](https://github.com/Capricornus007/piko/compare/v3.11.14...v3.11.15) (2026-11-26)
 
 ### 🐛 Bug Fixes
