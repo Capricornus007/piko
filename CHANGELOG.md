@@ -1,3 +1,10 @@
+## [3.11.5](https://github.com/Capricornus007/piko/compare/v3.11.4...v3.11.5) (2026-11-26)
+
+### 🐛 Bug Fixes
+
+* TimelineEntryHookPatch 補 getInstruction 擴展 import ([ae6884a](https://github.com/Capricornus007/piko/commit/ae6884a1cc20deb5d2acd03b4fe31ea621edeaea))
+* 最後 4 個 fingerprint 失配（morphe [#48](https://github.com/Capricornus007/piko/issues/48) 實測） ([f205cb1](https://github.com/Capricornus007/piko/commit/f205cb13ee9b5a46e7893a8656c196b3f096853b))
+
 ## [3.11.4](https://github.com/Capricornus007/piko/compare/v3.11.3...v3.11.4) (2026-11-25)
 
 ### 🐛 Bug Fixes
