@@ -1,3 +1,9 @@
+## [3.11.8](https://github.com/Capricornus007/piko/compare/v3.11.7...v3.11.8) (2026-11-26)
+
+### 🐛 Bug Fixes
+
+* FeatureFlag 改錨 FeatureSwitchesRepositoryImpl.getBoolean；profile_details.xml 容錯 ([10dc4c7](https://github.com/Capricornus007/piko/commit/10dc4c752a79c68f56be4a7a0012c07511d6c908)), references [#53](https://github.com/Capricornus007/piko/issues/53)
+
 ## [3.11.7](https://github.com/Capricornus007/piko/compare/v3.11.6...v3.11.7) (2026-11-26)
 
 ### 🐛 Bug Fixes

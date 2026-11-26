@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-11-26T01:41:00",
-  "description": "## [3.11.7](https://github.com/Capricornus007/piko/compare/v3.11.6...v3.11.7) (2026-11-26)\n\n### 🐛 Bug Fixes\n\n* settings 適配單一 Activity 架構——擴展自帶設定宿主 Activity ([c63fd7c](https://github.com/Capricornus007/piko/commit/c63fd7cd4d26baa8abbd7843317afddd29429e4c)), references [#52](https://github.com/Capricornus007/piko/issues/52)",
-  "download_url": "https://github.com/Capricornus007/piko/releases/download/v3.11.7/patches-3.11.7.mpp",
-  "signature_download_url": "https://github.com/Capricornus007/piko/releases/download/v3.11.7/patches-3.11.7.mpp.asc",
-  "version": "3.11.7"
+  "created_at": "2026-11-26T02:23:27",
+  "description": "## [3.11.8](https://github.com/Capricornus007/piko/compare/v3.11.7...v3.11.8) (2026-11-26)\n\n### 🐛 Bug Fixes\n\n* FeatureFlag 改錨 FeatureSwitchesRepositoryImpl.getBoolean；profile_details.xml 容錯 ([10dc4c7](https://github.com/Capricornus007/piko/commit/10dc4c752a79c68f56be4a7a0012c07511d6c908)), references [#53](https://github.com/Capricornus007/piko/issues/53)",
+  "download_url": "https://github.com/Capricornus007/piko/releases/download/v3.11.8/patches-3.11.8.mpp",
+  "signature_download_url": "https://github.com/Capricornus007/piko/releases/download/v3.11.8/patches-3.11.8.mpp.asc",
+  "version": "3.11.8"
 }
