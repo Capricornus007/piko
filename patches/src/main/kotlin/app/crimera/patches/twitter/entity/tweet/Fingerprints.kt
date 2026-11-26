@@ -61,46 +61,61 @@ internal object TweetShortTextFingerprint : Fingerprint(
     name = "getShortText",
 )
 
-internal object TweetNamesFingerprint : Fingerprint(
-    classFingerprint = TweetObjectFingerprint,
-    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL),
+// 2026-11-26：12.46.1 作者資訊從 u0(CanonicalPost) 上移到更高層
+// ni(author interface)：username=ni.D()、profile name=ni.getName()。
+// 舊的「u0 上一個方法內兩個 String getter + static 合併」結構全 dex 不存在
+// （jadx+dex smali+全 dex 引用掃描三方實錘，見 /tmp/mining_tweetnames_deep.md）。
+// 拆成三個 Fingerprint，各自抽混淆後方法名寫回 extension sentinel。
+
+// A) username source：ni.g() 的 smali idx 0 = invoke-interface ni->D()
+internal object TweetUsernameGetterFingerprint : Fingerprint(
+    definingClass = "Lcom/x/models/ni;",
+    name = "g",
     parameters = listOf(),
     returnType = "Ljava/lang/String;",
     filters =
         listOf(
             methodCall(
-                opcode = Opcode.INVOKE_VIRTUAL,
-                definingClass = "this",
+                opcode = Opcode.INVOKE_INTERFACE,
+                definingClass = "Lcom/x/models/ni;",
+                name = "D",
                 returnType = "Ljava/lang/String;",
             ),
-            opcode(
-                opcode = Opcode.MOVE_RESULT_OBJECT,
-                location = MatchAfterImmediately(),
-            ),
-            methodCall(
-                opcode = Opcode.INVOKE_VIRTUAL,
-                definingClass = "this",
-                returnType = "Ljava/lang/String;",
-                location = MatchAfterImmediately(),
-            ),
-            opcode(
-                opcode = Opcode.MOVE_RESULT_OBJECT,
-                location = MatchAfterImmediately(),
-            ),
+            opcode(Opcode.MOVE_RESULT_OBJECT, location = MatchAfterImmediately()),
             methodCall(
                 opcode = Opcode.INVOKE_STATIC,
+                definingClass = "Lads_mobile_sdk/o8;",
+                name = "k",
                 parameters = listOf("Ljava/lang/String;", "Ljava/lang/String;"),
                 returnType = "Ljava/lang/String;",
             ),
-            opcode(
-                opcode = Opcode.MOVE_RESULT_OBJECT,
-                location = MatchAfterImmediately(),
-            ),
-            opcode(
-                opcode = Opcode.RETURN_OBJECT,
-                location = MatchAfterImmediately(),
+            opcode(Opcode.MOVE_RESULT_OBJECT, location = MatchAfterImmediately()),
+            opcode(Opcode.RETURN_OBJECT, location = MatchAfterImmediately()),
+        ),
+)
+
+// B) profile name source：ni.a() 的 smali idx 0 = invoke-interface ni->getName()
+internal object TweetProfileNameGetterFingerprint : Fingerprint(
+    definingClass = "Lcom/x/models/ni;",
+    name = "a",
+    parameters = listOf(),
+    returnType = "Ljava/lang/String;",
+    filters =
+        listOf(
+            methodCall(
+                opcode = Opcode.INVOKE_INTERFACE,
+                definingClass = "Lcom/x/models/ni;",
+                name = "getName",
+                returnType = "Ljava/lang/String;",
             ),
         ),
+)
+
+// C) author accessor：u0.d() → mh（給 extension 兩段式反射用）
+internal object TweetAuthorAccessorFingerprint : Fingerprint(
+    definingClass = "Lcom/x/models/u0;",
+    name = "d",
+    returnType = "Lcom/x/models/mh;",
 )
 
 // Old "EntityList{mEntities=" is gone; the entity list class is now com.x.models.text.g0

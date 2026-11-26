@@ -27,18 +27,24 @@ public class Tweet extends Debug {
         return (Long) super.getMethod("getId");
     }
 
+    // 2026-11-26：12.46.1 作者方法已從 u0(CanonicalPost) 上移到 author 物件
+    // （ni 介面，f5/h8/rg 實作）。getDeclaredMethod 只在物件自身 class 上找，
+    // 直接在 u0 上找 D()/getName() 會拋 NoSuchMethodException。改兩段式：
+    // u0.d() 拿 author，再在 author 上反射（sentinel 皆由 patch 動態寫入）。
     public String getTweetUsername() throws Exception {
-        return (String) super.getMethod("userNameMethod");
+        Object author = super.getMethod("authorAccessorMethod");
+        return (String) super.getMethod(author, "userNameMethod");
     }
 
     public String getTweetLink() throws Exception {
         Long tweetId = getTweetId();
-        String username = getTweetUsername();
+        String username = getTweetUsername();   // 必須是無 @ 前綴的 D()，不能用 g()
         return "https://x.com/"+username+"/status/"+tweetId;
     }
 
     public String getTweetProfileName() throws Exception {
-        return (String) super.getMethod("profileNameMethod");
+        Object author = super.getMethod("authorAccessorMethod");
+        return (String) super.getMethod(author, "profileNameMethod");
     }
 
     public Long getTweetUserId() throws Exception {
