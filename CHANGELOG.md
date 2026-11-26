@@ -1,3 +1,9 @@
+## [3.11.6](https://github.com/Capricornus007/piko/compare/v3.11.5...v3.11.6) (2026-11-26)
+
+### 🐛 Bug Fixes
+
+* SettingsPatch 移除 redirectBMTab 依賴（morphe [#50](https://github.com/Capricornus007/piko/issues/50) 實錘 70 patch 連坐） ([5bd6733](https://github.com/Capricornus007/piko/commit/5bd67331b5274826f0c0ab58b87e456c885d5e3e))
+
 ## [3.11.5](https://github.com/Capricornus007/piko/compare/v3.11.4...v3.11.5) (2026-11-26)
 
 ### 🐛 Bug Fixes
