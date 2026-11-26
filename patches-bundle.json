@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-11-26T14:37:04",
-  "description": "## [3.11.13](https://github.com/Capricornus007/piko/compare/v3.11.12...v3.11.13) (2026-11-26)\n\n### 🐛 Bug Fixes\n\n* **release:** backmerge 改 merge 策略，修 Release [#32](https://github.com/Capricornus007/piko/issues/32) dev 同步 non-fast-forward ([2fe7ea0](https://github.com/Capricornus007/piko/commit/2fe7ea074e3740d0cc24ba5239f39f1bb0716ff9))",
-  "download_url": "https://github.com/Capricornus007/piko/releases/download/v3.11.13/patches-3.11.13.mpp",
-  "signature_download_url": "https://github.com/Capricornus007/piko/releases/download/v3.11.13/patches-3.11.13.mpp.asc",
-  "version": "3.11.13"
+  "created_at": "2026-11-26T14:56:06",
+  "description": "## [3.11.14](https://github.com/Capricornus007/piko/compare/v3.11.13...v3.11.14) (2026-11-26)\n\n### 🐛 Bug Fixes\n\n* **x46:** BringBackTwitter/DynamicColor 資源缺失改優雅跳過，修 X 12.46.1 補丁連坐 ([7d22753](https://github.com/Capricornus007/piko/commit/7d2275379e4f5b4b604138e9c29140e28e4c70d5)), references [#58](https://github.com/Capricornus007/piko/issues/58)",
+  "download_url": "https://github.com/Capricornus007/piko/releases/download/v3.11.14/patches-3.11.14.mpp",
+  "signature_download_url": "https://github.com/Capricornus007/piko/releases/download/v3.11.14/patches-3.11.14.mpp.asc",
+  "version": "3.11.14"
 }
