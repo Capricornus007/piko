@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-11-26T14:28:15",
-  "description": "## [3.11.12](https://github.com/Capricornus007/piko/compare/v3.11.11...v3.11.12) (2026-11-26)\n\n### 🐛 Bug Fixes\n\n* **release:** npx 失敗時仍打印 semantic-release 日誌（[#31](https://github.com/Capricornus007/piko/issues/31) 吞錯回歸） ([753100f](https://github.com/Capricornus007/piko/commit/753100fd17e3943a1dd153793909b08fee99f921))",
-  "download_url": "https://github.com/Capricornus007/piko/releases/download/v3.11.12/patches-3.11.12.mpp",
-  "signature_download_url": "https://github.com/Capricornus007/piko/releases/download/v3.11.12/patches-3.11.12.mpp.asc",
-  "version": "3.11.12"
+  "created_at": "2026-11-26T14:37:04",
+  "description": "## [3.11.13](https://github.com/Capricornus007/piko/compare/v3.11.12...v3.11.13) (2026-11-26)\n\n### 🐛 Bug Fixes\n\n* **release:** backmerge 改 merge 策略，修 Release [#32](https://github.com/Capricornus007/piko/issues/32) dev 同步 non-fast-forward ([2fe7ea0](https://github.com/Capricornus007/piko/commit/2fe7ea074e3740d0cc24ba5239f39f1bb0716ff9))",
+  "download_url": "https://github.com/Capricornus007/piko/releases/download/v3.11.13/patches-3.11.13.mpp",
+  "signature_download_url": "https://github.com/Capricornus007/piko/releases/download/v3.11.13/patches-3.11.13.mpp.asc",
+  "version": "3.11.13"
 }

@@ -1,3 +1,9 @@
+## [3.11.13](https://github.com/Capricornus007/piko/compare/v3.11.12...v3.11.13) (2026-11-26)
+
+### 🐛 Bug Fixes
+
+* **release:** backmerge 改 merge 策略，修 Release [#32](https://github.com/Capricornus007/piko/issues/32) dev 同步 non-fast-forward ([2fe7ea0](https://github.com/Capricornus007/piko/commit/2fe7ea074e3740d0cc24ba5239f39f1bb0716ff9))
+
 ## [3.11.12](https://github.com/Capricornus007/piko/compare/v3.11.11...v3.11.12) (2026-11-26)
 
 ### 🐛 Bug Fixes
