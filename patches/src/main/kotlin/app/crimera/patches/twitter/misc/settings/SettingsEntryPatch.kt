@@ -22,13 +22,15 @@ import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 // （見 SettingsResourcePatch.kt 容錯註解）。com.x.settings.j.c() 組裝
 // List<com.x.settings.common.s>（每個 s 包一組 common.r 條目）後直接返回，
 // 全 APK 唯一（androguard 實查 classes4.dex）。
+// 注意：r 的 8 參構造器在位元碼中全部以 invoke-direct/range 調用
+// （暫存器多，R8 選了 /range 變體），故 filter 必須同時接受兩種 opcode。
 internal object SettingsRootListFingerprint : Fingerprint(
     definingClass = "Lcom/x/settings/j;",
     name = "c",
     returnType = "Ljava/util/List;",
     filters = listOf(
         methodCall(
-            opcode = Opcode.INVOKE_DIRECT,
+            opcodes = listOf(Opcode.INVOKE_DIRECT, Opcode.INVOKE_DIRECT_RANGE),
             definingClass = "Lcom/x/settings/common/r;",
             name = "<init>",
         ),

@@ -72,9 +72,10 @@ val customDeepLinksPatch =
                         .asSequence()
                         .find {
                             val name = it.attributes.getNamedItem("android:name").nodeValue
-                            name == "com.twitter.deeplink.implementation.UrlInterpreterActivity"
+                            // 12.46.1-prod：UrlInterpreterActivity 已移除，deeplink 改由 MainActivity 接收
+                            name == "com.x.android.main.MainActivity"
                         }
-                        ?: throw PatchException("Unable to find UrlInterpreterActivity in AndroidManifest")
+                        ?: throw PatchException("Unable to find MainActivity in AndroidManifest")
 
                 val newIntentFilter =
                     document.createElement("intent-filter").apply {

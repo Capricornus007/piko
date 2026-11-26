@@ -91,7 +91,8 @@ public class TimelineEntry {
     }
     public static JsonTimelineEntry checkEntry(JsonTimelineEntry jsonTimelineEntry) {
         try {
-            String entryId = jsonTimelineEntry.a;
+            // 12.46.1-prod：stub 映射到 com.x.android.main.fragment.gk1，entryId 在欄位 c
+            String entryId = jsonTimelineEntry.c;
             if (isEntryIdRemove(entryId)) {
                 return null;
             }
