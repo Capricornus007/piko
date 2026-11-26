@@ -1,3 +1,10 @@
+## [3.11.9](https://github.com/Capricornus007/piko/compare/v3.11.8...v3.11.9) (2026-11-26)
+
+### 🐛 Bug Fixes
+
+* RemovePremiumUpsell 改由 FeatureFlag 全局覆寫（dex 錨點已消失） ([8045f4d](https://github.com/Capricornus007/piko/commit/8045f4d8f29a183101ecfb4c0e25db1550ca94a4))
+* ShowChangelogs / ActionEnums 改錨 12.46.1-prod 新模型 ([a80b9cd](https://github.com/Capricornus007/piko/commit/a80b9cdd6950a23093df29c66a72af55c9d24d3e))
+
 ## [3.11.8](https://github.com/Capricornus007/piko/compare/v3.11.7...v3.11.8) (2026-11-26)
 
 ### 🐛 Bug Fixes
