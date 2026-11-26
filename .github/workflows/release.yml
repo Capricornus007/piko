@@ -57,10 +57,19 @@ jobs:
           # 原因判定不發版（run 45822999327/#26 實錘），TAG 仍會指向舊 tag，
           # 單純 git describe 會誤判成「已發布」→ Attest 去找不存在的 .mpp 而判紅。
           BEFORE_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
-          # 先重定向到檔案再 cat，避免 `npx | tee` 在 sh -e（無 pipefail）下
-          # 把 semantic-release 的非零結束碼吞掉、讓失敗假成功。
+          # npx 不論成敗都要把輸出打到 CI log（失敗時更要看到），且保留其
+          # 結束碼由 bash -e 正常判紅。用 set +e 包住、cat 後再依 $rc 決定
+          # 是否手动 exit，避免 `npx | tee` 在無 pipefail 下吞錯、也避免
+          # `npx > file` 在 bash -e 下直接中止連 cat 都看不到（run #31 實錘）。
+          set +e
           npx --no-install semantic-release > /tmp/semantic-release.log 2>&1
+          _sr_rc=$?
+          set -e
           cat /tmp/semantic-release.log
+          if [ "$_sr_rc" -ne 0 ]; then
+            echo "::error::semantic-release 結束碼 $_sr_rc（完整輸出見上方）"
+            exit "$_sr_rc"
+          fi
           AFTER_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
           # 只有 tag 真的往前進才算本次發布；另外 semantic-release 明確說
           # 「won't be published」時一律當沒發（雙保險，防 tag 抓取竞争）。
