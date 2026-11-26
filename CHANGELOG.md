@@ -1,3 +1,11 @@
+## [3.12.1](https://github.com/Capricornus007/piko/compare/v3.12.0...v3.12.1) (2026-11-26)
+
+### 🐛 Bug Fixes
+
+* **x46:** Explore tabs 深度重寫——URP 新錨 + extension 多欄位映射 ([c8ab66a](https://github.com/Capricornus007/piko/commit/c8ab66a72e1b5c0189b471a0cd27627b5206907c))
+* **x46:** Inline action bar 深度重寫——Compose 新錨 + extension enum 映射 ([e78e2dd](https://github.com/Capricornus007/piko/commit/e78e2dd65c9c6c3d84971761e0f968d46e8a538d))
+* **x46:** Timeline tabs 深度重寫——sealed class tab type 映射（最後一個 tabs） ([ec5d7e8](https://github.com/Capricornus007/piko/commit/ec5d7e8e8e6aa0b366e0f22c49991f2325d5958e))
+
 ## [3.12.0](https://github.com/Capricornus007/piko/compare/v3.11.16...v3.12.0) (2026-11-26)
 
 ### 🐛 Bug Fixes
