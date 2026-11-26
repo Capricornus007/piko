@@ -14,9 +14,16 @@ import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.patch
 
+// 2026-11-26：12.46.1-prod 舊 BadgeableTabView.setBadgeNumber 消失（nav badge
+// 改 Compose）。新資料類 com.x.main.api.landing.m1（TabData）構造子
+// (String tooltip, int badgeCount, boolean hasUnreadContent)，欄位 a=badgeCount
+// （jadx 源碼 com/x/main/api/landing/m1.java:13 實查）。p2 即 badgeCount，
+// navbarBadgeCount(I)I 語意完整保留。
 private object BadgeNumberFingerprint : Fingerprint(
-    definingClass = "/BadgeableTabView;",
-    name = "setBadgeNumber",
+    definingClass = "Lcom/x/main/api/landing/m1;",
+    name = "<init>",
+    parameters = listOf("Ljava/lang/String;", "I", "Z"),
+    returnType = "V",
 )
 
 @Suppress("unused")
@@ -33,8 +40,8 @@ val hideNavBarBadgesPatch =
                 addInstructions(
                     0,
                     """
-                    invoke-static {p1}, ${Constants.PREF_DESCRIPTOR};->navbarBadgeCount(I)I
-                    move-result p1
+                    invoke-static {p2}, ${Constants.PREF_DESCRIPTOR};->navbarBadgeCount(I)I
+                    move-result p2
                     """.trimIndent(),
                 )
                 enableSettings("hideNavbarBadge")
