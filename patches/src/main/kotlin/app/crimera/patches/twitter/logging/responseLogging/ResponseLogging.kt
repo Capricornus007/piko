@@ -14,12 +14,18 @@ import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.patch.patch
 
-internal const val JACKSON_CLASS = "/fasterxml/jackson/core/"
-
-internal object InputStreamFingerprint : Fingerprint(
-    definingClass = JACKSON_CLASS,
-    returnType = JACKSON_CLASS,
-    parameters = listOf("Ljava/io/InputStream")
+// 2026-11-26：12.46.1-prod 移除 Jackson（fasterxml 全 dex 0 命中），不存在任何
+// InputStream→JSON 通用入口（16 dex 方法層掃描實錘，見 /tmp/mining_ads_logging.md）。
+// 方案 A（用戶拍板保留功能）：改 hook Apollo GraphQL 的 JSON reader 構造子
+// com.apollographql.apollo.api.json.c(okio.m)——每個 GraphQL 響應解析都會
+// new c(source)（payments/gif/finance/xchat/subscriptions 等 adapter 均實錘）。
+// okio.m = R8 混淆後的 BufferedSource（包名保留、類名混淆）。
+// 覆蓋面說明：GraphQL 主 API 流量全覆蓋；非 Apollo 的少量 REST/媒體響應不在
+// 此路徑（12.46.1 架構限制，功能語意由「所有 JSON」收斂為「所有 GraphQL 響應」）。
+internal object ApolloJsonReaderFingerprint : Fingerprint(
+    definingClass = "Lcom/apollographql/apollo/api/json/c;",
+    name = "<init>",
+    parameters = listOf("Lokio/m"),
 )
 
 @Suppress("unused")
@@ -33,10 +39,10 @@ val responseLoggingPatch =
 
         execute {
 
-            InputStreamFingerprint.method.addInstructions(
+            ApolloJsonReaderFingerprint.method.addInstructions(
                 0,
                 """
-                invoke-static {p1}, $PATCHES_DESCRIPTOR/loggers/ResponseLogger;->saveInputStream(Ljava/io/InputStream;)Ljava/io/InputStream;
+                invoke-static {p1}, $PATCHES_DESCRIPTOR/loggers/ResponseLogger;->saveBufferedSource(Lokio/m;)Lokio/m;
                 move-result-object p1
                 """.trimIndent(),
             )

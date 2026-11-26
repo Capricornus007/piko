@@ -43,6 +43,26 @@ public class ResponseLogger {
         return new ByteArrayInputStream(contentBytes.getBytes());
     }
 
+    /**
+     * 2026-11-26：12.46.1 移除 Jackson 後沒有 InputStream→JSON 入口；
+     * 主要 API（GraphQL）改走 Apollo 的 okio BufferedSource。此方法用
+     * peek() 讀全量（不消費原流、不影響後續解析），過濾 token 後寫檔，
+     * 並原樣返回 source。okio.m/I() 是 12.46.1 的 R8 混淆名
+     * （BufferedSource/readUtf8，見 stub okio/m.java 對照註釋）。
+     */
+    public static okio.m saveBufferedSource(okio.m source) {
+        if(!LOG_RES) return source;
+        try {
+            String data = source.peek().I() + "\n";
+            if(!(data.indexOf("session_token") == 2 || data.indexOf("guest_token") == 2)){
+                writeFile(data,true);
+            }
+        } catch (Throwable t) {
+            // 日誌功能絕不能影響正常解析：任何讀取/寫檔失敗都靜默放行。
+        }
+        return source;
+    }
+
     private static boolean writeFile(String data,boolean append){
         String fileName = "Server-Response-Log.txt";
         return PikoUtils.pikoWriteFile(fileName,data,append);
