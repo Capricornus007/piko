@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-11-26T15:17:45",
-  "description": "## [3.11.16](https://github.com/Capricornus007/piko/compare/v3.11.15...v3.11.16) (2026-11-26)\n\n### 🐛 Bug Fixes\n\n* **x46:** HideAds findFreeRegister 補第二參數（修 CI 編譯 [#36](https://github.com/Capricornus007/piko/issues/36)） ([dfe4625](https://github.com/Capricornus007/piko/commit/dfe46256684487e2b8e57ddef856b9c570ef2360))\n* **x46:** HidePromotedTrend 換錨 Apollo ll1.c()（jadx+dex 實錘，高信心） ([b5a606e](https://github.com/Capricornus007/piko/commit/b5a606e6653e501554863de28d4924e565b74024))",
-  "download_url": "https://github.com/Capricornus007/piko/releases/download/v3.11.16/patches-3.11.16.mpp",
-  "signature_download_url": "https://github.com/Capricornus007/piko/releases/download/v3.11.16/patches-3.11.16.mpp.asc",
-  "version": "3.11.16"
+  "created_at": "2026-11-26T16:20:00",
+  "description": "## [3.12.0](https://github.com/Capricornus007/piko/compare/v3.11.16...v3.12.0) (2026-11-26)\n\n### 🐛 Bug Fixes\n\n* **x46:** Custom download folder 換錨新下載器 g.b()（dex/jadx/disas2 三方實錘） ([1be858e](https://github.com/Capricornus007/piko/commit/1be858e790bedfbec2c438b797242c5e282fb500))\n* **x46:** Download patch 重寫 premium 閘門 + GIF 補齊（entity-link 採礦落地） ([561930c](https://github.com/Capricornus007/piko/commit/561930cdd606715201a4f5156714fa5ae577a6c5))\n* **x46:** DownloadPatch 補回 OpcodesFilter/registersUsed import（修 [#40](https://github.com/Capricornus007/piko/issues/40) 編譯） ([10c5e0a](https://github.com/Capricornus007/piko/commit/10c5e0a4eb750f504b7530c499532b743030d7da))\n* **x46:** sidebar 糾錯 + HideRecommendedUsers 換錨（customize 採礦落地） ([77b819e](https://github.com/Capricornus007/piko/commit/77b819ecf7b88bf4f48c6159f69f283883c2e7cb))\n\n### ✨ New Features\n\n* **x46:** Log server response 走方案 A——hook Apollo okio BufferedSource ([d79f445](https://github.com/Capricornus007/piko/commit/d79f445d9d4234ce560f9cdb6bc90603f06bfc4a))",
+  "download_url": "https://github.com/Capricornus007/piko/releases/download/v3.12.0/patches-3.12.0.mpp",
+  "signature_download_url": "https://github.com/Capricornus007/piko/releases/download/v3.12.0/patches-3.12.0.mpp.asc",
+  "version": "3.12.0"
 }

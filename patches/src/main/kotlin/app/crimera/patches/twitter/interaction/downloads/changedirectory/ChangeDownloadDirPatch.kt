@@ -14,20 +14,34 @@ import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
 import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.instructions
-import app.morphe.patcher.opcode
+import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.patch
 import app.morphe.patcher.string
 import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.iface.instruction.FiveRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.ReferenceInstruction
+import com.android.tools.smali.dexlib2.iface.instruction.RegisterRangeInstruction
 
+// 2026-11-26：12.46.1-prod 移除舊 logger 描述字串（parse(...)/guessFileName(...)/
+// setNotificationVisibility(...) 全 dex 0 命中）。新下載器是 com/x/network/g.b(
+// Uri,String,String,Map,String,Z) → DownloadManager.Request，內部 o8.k("X/", fileName)
+// + setDestinationInExternalPublicDir(DIRECTORY_DOWNLOADS, k)（jadx g.java:148-171 +
+// disas2 smali 實錘）。"X/" 是該方法唯一 const-string，作錨點。
 internal object DownloadPathFingerprint : Fingerprint(
-    returnType = "V",
-    filters =
+    definingClass = "Lcom/x/network/g;",
+    name = "b",
+    parameters =
         listOf(
-            string("parse(...)"),
-            opcode(Opcode.MOVE_RESULT_OBJECT),
+            "Landroid/net/Uri;",
+            "Ljava/lang/String;",
+            "Ljava/lang/String;",
+            "Ljava/util/Map;",
+            "Ljava/lang/String;",
+            "Z",
         ),
-    strings = listOf("guessFileName(...)", "setNotificationVisibility(...)"),
+    returnType = "Landroid/app/DownloadManager\$Request;",
+    strings = listOf("X/"),
 )
 
 @Suppress("unused")
@@ -48,21 +62,46 @@ val changeDownloadDirPatch =
                 "invoke-static {}, $PREF_DESCRIPTOR;->getPublicFolder()Ljava/lang/String;"
 
             DownloadPathFingerprint.method.apply {
-                val moveResObjIndex = DownloadPathFingerprint.instructionMatches[1].index
-                val fileNameReg = getInstruction<OneRegisterInstruction>(moveResObjIndex).registerA
-
-                val insertAt =
+                // 檔名是參數 str3（smali v6），不再是任何 parse 的 move-result。
+                // o8.k 是 "X/" 之後第一個 INVOKE_STATIC，{v4, v6}：v6 = 檔名。
+                // 在 o8.k 之前把 v6 換成 getVideoFolder(fileName)，公共/私有兩個
+                // 分支同時生效（兩分支都用 o8.k 的結果當檔名）。
+                val xSlashIndex = DownloadPathFingerprint.stringMatches[0].index
+                val o8k =
                     instructions
-                        .first { it.opcode == Opcode.INVOKE_VIRTUAL }
-                        .location.index
+                        .first { it.location.index > xSlashIndex && it.opcode == Opcode.INVOKE_STATIC }
+                val o8kIndex = o8k.location.index
+                val fileNameReg =
+                    when (o8k) {
+                        is FiveRegisterInstruction -> o8k.registerD
+                        is RegisterRangeInstruction -> o8k.startRegister + 1
+                        else -> throw PatchException("Custom download folder: o8.k 呼叫格式非預期")
+                    }
 
-                val publicFolderRegister = getInstruction<OneRegisterInstruction>(insertAt - 1).registerA
+                // 公共分支：sget-object Environment.DIRECTORY_DOWNLOADS → 換成
+                // getPublicFolder()（自訂公開資料夾）。
+                val sgetIndex =
+                    instructions
+                        .first {
+                            it.opcode == Opcode.SGET_OBJECT &&
+                                (it as ReferenceInstruction).reference.toString()
+                                    .contains("DIRECTORY_DOWNLOADS")
+                        }
+                        .location.index
+                val dirReg = getInstruction<OneRegisterInstruction>(sgetIndex).registerA
+
+                // 先插靠後的（sgetIndex+1），再插靠前的（o8kIndex）——
+                // 前面的插入會讓後面的索引偏移，順序反了會插錯位置。
                 addInstructions(
-                    insertAt,
+                    sgetIndex + 1,
                     """
                     $PUBLICFOLDER_DESCRIPTOR
-                    move-result-object v$publicFolderRegister
-                    
+                    move-result-object v$dirReg
+                    """.trimIndent(),
+                )
+                addInstructions(
+                    o8kIndex,
+                    """
                     invoke-static {v$fileNameReg}, $GETFOLDER_DESCRIPTOR
                     move-result-object v$fileNameReg
                     """.trimIndent(),
