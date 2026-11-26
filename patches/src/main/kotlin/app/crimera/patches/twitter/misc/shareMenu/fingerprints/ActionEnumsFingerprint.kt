@@ -24,8 +24,12 @@ import com.android.tools.smali.dexlib2.builder.MethodImplementationBuilder
 import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction21c
 import com.android.tools.smali.dexlib2.iface.instruction.formats.Instruction3rc
 
+// 2026-11-26：12.46.1-prod 舊 com.twitter.model.core 命名空間消失；新枚舉
+// com.x.models.x5（Compose PostActionType），<clinit> 精確含 None/Favorite/Retweet，
+// $values 有 filled-new-array/range、<clinit> 有 NEW_INSTANCE + INVOKE_STATIC
+// （androguard 實查），addActionV2 的注入形狀完整保留。
 internal object ActionEnumsFingerprint : Fingerprint(
-    definingClass = "Lcom/twitter/model/core",
+    definingClass = "Lcom/x/models/x5;",
     strings = listOf("None", "Favorite", "Retweet"),
 )
 
