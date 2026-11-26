@@ -1,3 +1,9 @@
+## [3.11.12](https://github.com/Capricornus007/piko/compare/v3.11.11...v3.11.12) (2026-11-26)
+
+### 🐛 Bug Fixes
+
+* **release:** npx 失敗時仍打印 semantic-release 日誌（[#31](https://github.com/Capricornus007/piko/issues/31) 吞錯回歸） ([753100f](https://github.com/Capricornus007/piko/commit/753100fd17e3943a1dd153793909b08fee99f921))
+
 ## [3.11.11](https://github.com/Capricornus007/piko/compare/v3.11.10...v3.11.11) (2026-11-26)
 
 ### 🐛 Bug Fixes
