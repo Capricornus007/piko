@@ -28,6 +28,19 @@ internal val settingsResourcePatch =
                 }
             }
 
+            // 2026-11-26：12.46.1-prod 移除了 com.twitter.android.AuthorizeAppActivity
+            // （piko 設定的舊宿主，ActivityHook.startActivity 以顯式 intent 指向它）。
+            // 改註冊擴展自帶的 PikoSettingsActivity（exported=false，僅應用內顯式
+            // intent 啟動；不設 theme，繼承 application 主題，明暗由
+            // ActivityHook.getPreferenceContext 的 ContextThemeWrapper 處理）。
+            document("AndroidManifest.xml").use { document ->
+                val application = document.getNode("application") as Element
+                val activity = document.createElement("activity")
+                activity.setAttribute("android:name", "app.morphe.extension.twitter.settings.PikoSettingsActivity")
+                activity.setAttribute("android:exported", "false")
+                application.appendChild(activity)
+            }
+
             // 2026-11-26：12.46.1-prod 移除了 res/xml/settings_root.xml（settings root 改為
             // com.x.settings.j.c() 代碼構建，見該檔 259-264 行的 List<common.s> 組裝）。
             // 此注入點消失時若直接拋例外，本 patch 失敗 → 所有依賴 settingsPatch 的

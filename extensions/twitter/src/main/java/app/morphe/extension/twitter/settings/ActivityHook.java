@@ -34,7 +34,10 @@ import app.morphe.extension.twitter.patches.nativeFeatures.readerMode.ReaderMode
 public class ActivityHook {
     @SuppressLint("StaticFieldLeak")
     public static Toolbar toolbar;
-    private static final String AUTHORIZE_ACTIVITY_CLASS = "com.twitter.android.AuthorizeAppActivity";
+    // 12.46.1-prod 起宿主移除了 AuthorizeAppActivity，改用擴展自帶的
+    // PikoSettingsActivity（SettingsResourcePatch 會在 manifest 註冊）。
+    private static final String AUTHORIZE_ACTIVITY_CLASS =
+            "app.morphe.extension.twitter.settings.PikoSettingsActivity";
     private static final String EXTRA_PIKO = "piko";
     private static final String EXTRA_PIKO_SETTINGS = EXTRA_PIKO + "_settings";
     public static final String EXTRA_SETTINGS_SEARCH_TARGET_KEY = EXTRA_PIKO + "_settings_search_target_key";

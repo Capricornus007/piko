@@ -83,8 +83,10 @@ public class Utils {
     }
 
     public static void startXSettings() {
-        String className = "com.twitter.app.settings.SettingsRootCompatActivity";
-        startActivityFromClassName(className);
+        // 12.46.1-prod 移除了 SettingsRootCompatActivity（X 設定根改為
+        // MainActivity 內嵌的 Decompose 畫面，無獨立入口 Activity）。
+        // deeplink i/r/settings 路由改開 piko 設定，避免 ActivityNotFoundException。
+        app.morphe.extension.twitter.settings.ActivityHook.startSettingsActivity();
     }
 
     // thanks to @Ouxyl
