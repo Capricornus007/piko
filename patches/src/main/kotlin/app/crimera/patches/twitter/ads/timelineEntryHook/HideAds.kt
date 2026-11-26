@@ -57,7 +57,7 @@ val hideAds =
             // return_reg 本身。舊版用「最後 NEW_INSTANCE +3」另取 reg 的假設已失效
             // （該處已非 TwoRegisterInstruction，且 reg 與 return_reg 同為 v1 會誤殺）。
             // 用 findFreeRegister 取獨立 flag 暫存器，保持「兩暫存器不同」語意。
-            val flag_reg = findFreeRegister(return_loc)
+            val flag_reg = method.findFreeRegister(return_loc, listOf(return_reg))
 
             method.addInstructionsWithLabels(
                 return_loc,
