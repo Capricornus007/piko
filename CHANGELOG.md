@@ -1,3 +1,9 @@
+## [3.12.2](https://github.com/Capricornus007/piko/compare/v3.12.1...v3.12.2) (2026-11-26)
+
+### 🐛 Bug Fixes
+
+* **x46:** TweetNames 實體模型重構——作者方法上移到 ni 的兩段式反射（最後一塊） ([08c800f](https://github.com/Capricornus007/piko/commit/08c800f5476aea36ebbb1b35d8eac188d6018a3b))
+
 ## [3.12.1](https://github.com/Capricornus007/piko/compare/v3.12.0...v3.12.1) (2026-11-26)
 
 ### 🐛 Bug Fixes

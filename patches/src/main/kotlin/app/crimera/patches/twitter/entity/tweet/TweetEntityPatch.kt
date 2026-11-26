@@ -8,6 +8,7 @@ package app.crimera.patches.twitter.entity.tweet
 
 import app.crimera.patches.twitter.entity.tweetInfo.TweetInfoObjectFingerprint
 import app.crimera.utils.changeFirstString
+import app.crimera.utils.changeString
 import app.crimera.utils.changeStringAt
 import app.crimera.utils.extensionToClassName
 import app.crimera.utils.fieldExtractor
@@ -23,16 +24,26 @@ val tweetEntityPatch =
         description = "For tweet entity reflection",
     ) {
         execute {
-            val (profileNameMethod, userNameMethod) =
-                with(TweetNamesFingerprint) {
-                    Pair(
-                        instructionMatches[0].instruction.getReference<MethodReference>()!!,
-                        instructionMatches[2].instruction.getReference<MethodReference>()!!,
-                    )
-                }
+            // 2026-11-26：作者方法從 u0 上移到 ni(author)，舊 TweetNamesFingerprint
+            // 的 [0]/[2] 結構已不存在。改從兩個新 Fingerprint 各抽 [0] 的方法名
+            // （D=username、getName=profile name），並抽 u0.d() 寫入 authorAccessor
+            // sentinel 供 extension 兩段式反射（見 /tmp/mining_tweetnames_deep.md）。
+            val userNameMethod =
+                TweetUsernameGetterFingerprint
+                    .instructionMatches[0].instruction.getReference<MethodReference>()!!
+            val profileNameMethod =
+                TweetProfileNameGetterFingerprint
+                    .instructionMatches[0].instruction.getReference<MethodReference>()!!
 
-            TweetUsernameFingerprint.changeFirstString(userNameMethod.name)
-            TweetProfileNameFingerprint.changeFirstString(profileNameMethod.name)
+            // 用 changeString 按 sentinel 內容匹配（非槽位順序）——extension 的
+            // getTweetUsername/ProfileName 改兩段式反射後各有兩個字符串，
+            // changeFirstString 會改錯槽位。author accessor 方法名從 dex 的
+            // u0.d() 抽出（混淆名會變，不硬編碼）。
+            val authorAccessorName = TweetAuthorAccessorFingerprint.method.name
+            TweetUsernameFingerprint.changeString("authorAccessorMethod", authorAccessorName)
+            TweetUsernameFingerprint.changeString("userNameMethod", userNameMethod.name)
+            TweetProfileNameFingerprint.changeString("authorAccessorMethod", authorAccessorName)
+            TweetProfileNameFingerprint.changeString("profileNameMethod", profileNameMethod.name)
 
             val tweetObjectMethods = TweetObjectFingerprint.classDef.methods
 
