@@ -23,16 +23,22 @@ private val selectableTextResourcePatch =
                     "user_bio",
                 ).map { "@id/$it" }
 
-            document("res/layout/profile_details.xml").use { editor ->
-                val texts = editor.getElementsByTagName("com.twitter.ui.components.text.legacy.TypefacesTextView")
-                for (i in 0 until texts.length) {
-                    val text = texts.item(i) as Element
-                    val id = text.getAttribute("android:id")
+            // 2026-11-26：12.46.1-prod 移除了 res/layout/profile_details.xml
+            //（profile 頁重構），容錯跳過避免連坐（同 settings_root.xml 模式）。
+            try {
+                document("res/layout/profile_details.xml").use { editor ->
+                    val texts = editor.getElementsByTagName("com.twitter.ui.components.text.legacy.TypefacesTextView")
+                    for (i in 0 until texts.length) {
+                        val text = texts.item(i) as Element
+                        val id = text.getAttribute("android:id")
 
-                    if (ids.contains(id)) {
-                        text.setAttribute("android:textIsSelectable", "true")
+                        if (ids.contains(id)) {
+                            text.setAttribute("android:textIsSelectable", "true")
+                        }
                     }
                 }
+            } catch (t: Throwable) {
+                println("profile_details.xml 注入跳過：${t::class.simpleName}: ${t.message}")
             }
         }
     }
