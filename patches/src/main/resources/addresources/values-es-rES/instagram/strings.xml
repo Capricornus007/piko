@@ -477,4 +477,7 @@
     <string name="piko_media_activity">actividad</string>
     <string name="piko_patch_theme">Tema</string>
     <string name="piko_patch_settings">Añadir ajustes</string>
+    <string name="piko_resume_reels_after_scrolling">Reanudar Reels tras desplazarse</string>
+    <string name="piko_resume_reels_after_scrolling_desc">Continúa un Reel desde donde lo dejaste cuando vuelves a desplazarte a él</string>
+    <string name="piko_download_file_name_token_upload_timestamp">Marca de tiempo</string>
 </resources>
