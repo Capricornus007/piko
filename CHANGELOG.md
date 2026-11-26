@@ -1,3 +1,16 @@
+## [3.12.0](https://github.com/Capricornus007/piko/compare/v3.11.16...v3.12.0) (2026-11-26)
+
+### 🐛 Bug Fixes
+
+* **x46:** Custom download folder 換錨新下載器 g.b()（dex/jadx/disas2 三方實錘） ([1be858e](https://github.com/Capricornus007/piko/commit/1be858e790bedfbec2c438b797242c5e282fb500))
+* **x46:** Download patch 重寫 premium 閘門 + GIF 補齊（entity-link 採礦落地） ([561930c](https://github.com/Capricornus007/piko/commit/561930cdd606715201a4f5156714fa5ae577a6c5))
+* **x46:** DownloadPatch 補回 OpcodesFilter/registersUsed import（修 [#40](https://github.com/Capricornus007/piko/issues/40) 編譯） ([10c5e0a](https://github.com/Capricornus007/piko/commit/10c5e0a4eb750f504b7530c499532b743030d7da))
+* **x46:** sidebar 糾錯 + HideRecommendedUsers 換錨（customize 採礦落地） ([77b819e](https://github.com/Capricornus007/piko/commit/77b819ecf7b88bf4f48c6159f69f283883c2e7cb))
+
+### ✨ New Features
+
+* **x46:** Log server response 走方案 A——hook Apollo okio BufferedSource ([d79f445](https://github.com/Capricornus007/piko/commit/d79f445d9d4234ce560f9cdb6bc90603f06bfc4a))
+
 ## [3.11.16](https://github.com/Capricornus007/piko/compare/v3.11.15...v3.11.16) (2026-11-26)
 
 ### 🐛 Bug Fixes
