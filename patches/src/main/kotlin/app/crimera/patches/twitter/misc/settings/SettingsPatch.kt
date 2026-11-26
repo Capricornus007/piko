@@ -10,7 +10,6 @@ import app.crimera.utils.InitMethod
 import app.crimera.patches.twitter.misc.crashLogs.crashLogsPatch
 import app.crimera.patches.twitter.misc.extension.sharedExtensionPatch
 import app.crimera.patches.twitter.misc.extension.twitterInitHook
-import app.crimera.patches.twitter.premium.redirectBMNavBar.redirectBMTab
 import app.crimera.patches.twitter.utils.Constants.ACTIVITY_HOOK_CLASS
 import app.crimera.patches.twitter.utils.Constants.ACTIVITY_SETTINGS_CLASS
 import app.crimera.patches.twitter.utils.Constants.DEEPLINK_HOOK_CLASS
@@ -54,7 +53,10 @@ val settingsPatch =
             checkCompatibilityPatch,
             sharedExtensionPatch,
             settingsResourcePatch,
-            redirectBMTab,
+            // redirectBMTab 依賴移除（2026-11-26）：material tabs 套件已從
+            // 12.46.1-prod 移除，TabLayoutFingerprint 必失配 → 此依賴讓
+            // SettingsPatch 連坐失敗 → 70 個 patch 全倒（morphe #50 實錘）。
+            // RedirectBMTab 本身留待 Compose 底欄重新設計。
             addResourcesPatch,
             crashLogsPatch,
         )
