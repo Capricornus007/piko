@@ -323,7 +323,10 @@ public class Pref {
         if(Utils.getBooleanPref(Settings.TIMELINE_ENABLE_VID_AUTO_ADVANCE)){
             return 1;
         }
-        return -1;
+        // 2026-11-26：12.46.1 自動播放設定從 int 閾值改為 boolean（getBoolean）。
+        // 本方法返回值被 move-result 接收覆蓋該 boolean；Dalvik 中 0=false、非0=true，
+        // 舊的 -1 會被當成 true 導致「停用」失效。boolean 語意必須回 0。
+        return 0;
     }
 
     public static boolean hideHiddenReplies(boolean bool){
