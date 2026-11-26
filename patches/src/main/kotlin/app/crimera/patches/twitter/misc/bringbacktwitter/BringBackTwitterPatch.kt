@@ -100,14 +100,19 @@ val bringBackTwitterPatch =
 
             // region Bring back twitter blue
             val twitterBlueColor = "@color/twitter_blue"
-            document("res/layout/ocf_twitter_logo.xml").use {
-                val imageView = it.getElementsByTagName("ImageView").item(0) as Element
-                imageView.setAttribute("app:tint", twitterBlueColor)
-            }
-
-            document("res/layout/channels_toolbar_main.xml").use {
-                val imageView = it.getElementsByTagName("ImageView").item(0) as Element
-                imageView.setAttribute("app:tint", twitterBlueColor)
+            // 2026-11-26：這兩個舊 layout 已從 12.46.1-prod 移除（#58 實錘
+            // ocf_twitter_logo.xml FileNotFoundException）；tint 注入是錦上添花，
+            // 資源不存在就跳過，不能拖累整個 Bring back twitter patch 及其依賴。
+            // document() 拋裸 FileNotFoundException，catch Throwable 兜住所有包裝變體。
+            for (_legacyLayout in listOf("res/layout/ocf_twitter_logo.xml", "res/layout/channels_toolbar_main.xml")) {
+                try {
+                    document(_legacyLayout).use {
+                        val imageView = it.getElementsByTagName("ImageView").item(0) as Element
+                        imageView.setAttribute("app:tint", twitterBlueColor)
+                    }
+                } catch (t: Throwable) {
+                    println("Bring back twitter: $_legacyLayout tint 注入跳過：${t::class.simpleName}: ${t.message}")
+                }
             }
 
             document("res/values/colors.xml").use {

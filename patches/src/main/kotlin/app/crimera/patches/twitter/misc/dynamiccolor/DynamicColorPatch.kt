@@ -7,7 +7,6 @@
 package app.crimera.patches.twitter.misc.dynamiccolor
 
 import app.crimera.patches.twitter.utils.Constants.COMPATIBILITY_X
-import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.document
 import app.morphe.patcher.patch.patch
 import app.morphe.patcher.patch.resourceFile
@@ -230,7 +229,14 @@ private fun Document.overrideStyle(
             .asSequence()
             .map { it as Element }
             .firstOrNull { it.getAttribute("name") == name }
-            ?: throw PatchException("Style $name not found")
+            // 2026-11-26：12.46.1-prod 重構掉 PaletteDim/PaletteLightsOut 等舊 style
+            // （#58 實錘 "Style PaletteDim not found"）。這些是可選外觀微調，
+            // 不存在就跳過，其餘仍存在的 style 照樣覆蓋，不讓整個 Dynamic color
+            // patch 判紅連坐其他補丁。保留的 style 功能零降級。
+            ?: run {
+                println("Dynamic color: style $name 不存在於 12.46.1，跳過覆蓋")
+                return
+            }
 
     getElementsByTagName("style")
         .asSequence()

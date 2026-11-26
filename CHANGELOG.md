@@ -1,3 +1,9 @@
+## [3.11.14](https://github.com/Capricornus007/piko/compare/v3.11.13...v3.11.14) (2026-11-26)
+
+### 🐛 Bug Fixes
+
+* **x46:** BringBackTwitter/DynamicColor 資源缺失改優雅跳過，修 X 12.46.1 補丁連坐 ([7d22753](https://github.com/Capricornus007/piko/commit/7d2275379e4f5b4b604138e9c29140e28e4c70d5)), references [#58](https://github.com/Capricornus007/piko/issues/58)
+
 ## [3.11.13](https://github.com/Capricornus007/piko/compare/v3.11.12...v3.11.13) (2026-11-26)
 
 ### 🐛 Bug Fixes
