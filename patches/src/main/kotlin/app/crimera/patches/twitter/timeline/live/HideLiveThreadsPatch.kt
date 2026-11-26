@@ -8,24 +8,8 @@ package app.crimera.patches.twitter.timeline.live
 
 import app.crimera.patches.twitter.misc.settings.settingsPatch
 import app.crimera.patches.twitter.utils.Constants.COMPATIBILITY_X
-import app.crimera.patches.twitter.utils.Constants.PREF_DESCRIPTOR
 import app.crimera.patches.twitter.utils.enableSettings
-import app.morphe.patcher.Fingerprint
-import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
-import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
-import app.morphe.patcher.extensions.InstructionExtensions.instructions
-import app.morphe.patcher.opcode
 import app.morphe.patcher.patch.patch
-import com.android.tools.smali.dexlib2.Opcode
-import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
-
-private object HideLiveThreadsFingerprint : Fingerprint(
-    definingClass = "Lcom/twitter/fleets/api/json/JsonFleetsTimelineResponse;",
-    filters =
-        listOf(
-            opcode(Opcode.IGET_OBJECT),
-        ),
-)
 
 @Suppress("unused")
 val hideLiveThreadsPatch =
@@ -36,22 +20,12 @@ val hideLiveThreadsPatch =
         dependsOn(settingsPatch)
 
         execute {
-            val method = HideLiveThreadsFingerprint.method
-            val instructions = method.instructions
-
-            val loc = instructions.first { it.opcode == Opcode.IGET_OBJECT }.location.index
-            val reg = method.getInstruction<OneRegisterInstruction>(loc).registerA
-
-            val HIDE_LIVE_DESCRIPTOR =
-                "invoke-static {v$reg}, $PREF_DESCRIPTOR;->liveThread(Ljava/util/ArrayList;)Ljava/util/ArrayList;"
-
-            method.addInstructions(
-                loc + 1,
-                """
-                $HIDE_LIVE_DESCRIPTOR
-                move-result-object v$reg
-                """.trimIndent(),
-            )
+            // 2026-11-26：Fleets / Live Threads 功能已從 X 上游徹底移除（2021 年），
+            // 12.46.1-prod 三方實錘（jadx 源碼 0 命中、16 dex 無模型類、僅剩遙測字面量）：
+            // 舊 JsonFleetsTimelineResponse 類不存在，任何新錨點都只會 hook 到無關
+            // 遙測/開關代碼。保留 patch 聲明與 settings 以維持依賴完整性，
+            // execute 改 no-op，避免 fingerprint 失配連坐其他補丁。
+            println("Hide Live Threads: 上游已移除此功能，patch 跳過（no-op）")
             enableSettings("hideLiveThreads")
         }
     }

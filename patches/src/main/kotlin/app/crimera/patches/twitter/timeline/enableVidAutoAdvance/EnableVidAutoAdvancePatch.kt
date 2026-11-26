@@ -20,7 +20,11 @@ import com.android.tools.smali.dexlib2.Opcode
 private object EnableVidAutoAdvancePatchFingerprint : Fingerprint(
     filters =
         listOf(
-            string("immersive_video_auto_advance_duration_threshold"),
+            // 2026-11-26：12.46.1-prod 把自動播放從 int 毫秒閾值模型改成 boolean
+            // 持久化開關，舊 immersive_video_auto_advance_duration_threshold 字串
+            // 在 16 個 dex 全部消失。新錨點實錘於
+            // com/x/media/playback/settings/persistent/c.java:40 的 getBoolean。
+            string("persistent_video_settings_auto_advance_enabled"),
             opcode(Opcode.MOVE_RESULT),
         ),
 )
