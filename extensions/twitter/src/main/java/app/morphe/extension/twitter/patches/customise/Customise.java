@@ -131,29 +131,67 @@ public class Customise {
         return inp;
     }
 
+    /**
+     * 2026-11-26：12.46.1 舊 JsonPageTabs 已被 UrpTimeline 取代，且
+     * UrpTimeline.a 是 title（如 "For You"）不是 tab id。改為彈性讀取
+     * b=Timeline.id / c=segmentedTimelineId / d.b=ScribeConfig.section
+     * （如 "for_you"/"explore_for_you"），並用 matchesChoice 正規化比對。
+     * 保留舊模型 a 欄位相容。
+     */
+    private static boolean matchesChoice(String id, ArrayList choices){
+        if(id == null || id.isEmpty()) return false;
+        String norm = id.toLowerCase(java.util.Locale.US);
+        if(norm.startsWith("explore_")) norm = norm.substring(8);  // explore_for_you → for_you
+        if(choices.contains(id) || choices.contains(norm)) return true;
+        for(Object c : choices){
+            if(c instanceof String && norm.equals(((String) c).toLowerCase(java.util.Locale.US))) return true;
+        }
+        return false;
+    }
+
     public static ArrayList exploretabs(ArrayList inp){
         try{
             ArrayList choices = Pref.customExploreTabs();
 
             if(choices.isEmpty()) return inp;
 
-            Object inpObj = inp.clone();
-            ArrayList<?> arr = (ArrayList<?>) inpObj;
+            ArrayList<?> arr = (ArrayList<?>) inp.clone();
             Iterator itr = inp.iterator();
 
             while (itr.hasNext()) {
-
                 Object obj = itr.next();
+                if(obj == null) continue;
                 Class<?> clazz = obj.getClass();
-                Field field = clazz.getDeclaredField("a");
-                String id = (String) field.get(obj);
+                boolean matched = false;
 
-                if (id!=null && choices.contains(id)){
-                    arr.remove(obj);
+                // 新模型 com.x.repositories.urp.i：b=Timeline.id、c=segmentedId、
+                // a=title；舊模型 JsonPageTabs：a=tab id（保留相容）
+                String[] strFields = {"b", "c", "a"};
+                for(String fn : strFields){
+                    try{
+                        Field f = clazz.getDeclaredField(fn);
+                        Object v = f.get(obj);
+                        if(v instanceof String && matchesChoice((String) v, choices)){
+                            matched = true;
+                            break;
+                        }
+                    }catch(Exception ignore){}
                 }
+                // ScribeConfig.section（com.x.repositories.urp.h.b）
+                if(!matched){
+                    try{
+                        Field d = clazz.getDeclaredField("d");
+                        Object cfg = d.get(obj);
+                        if(cfg != null){
+                            Field b = cfg.getClass().getDeclaredField("b");
+                            Object v = b.get(cfg);
+                            if(v instanceof String && matchesChoice((String) v, choices)) matched = true;
+                        }
+                    }catch(Exception ignore){}
+                }
+                if(matched) arr.remove(obj);
             }
             return arr;
-
 
         }catch (Exception e){
             logger(e);
