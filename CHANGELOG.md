@@ -1,3 +1,9 @@
+## [3.11.15](https://github.com/Capricornus007/piko/compare/v3.11.14...v3.11.15) (2026-11-26)
+
+### 🐛 Bug Fixes
+
+* **x46:** timeline 三補丁換錨（jadx 反彙編實錘） ([45a4528](https://github.com/Capricornus007/piko/commit/45a4528056f10eb3a3e1f775a32672c8106de096))
+
 ## [3.11.14](https://github.com/Capricornus007/piko/compare/v3.11.13...v3.11.14) (2026-11-26)
 
 ### 🐛 Bug Fixes
