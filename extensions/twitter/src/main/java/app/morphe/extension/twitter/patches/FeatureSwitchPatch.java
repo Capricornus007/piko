@@ -112,6 +112,10 @@ public class FeatureSwitchPatch {
         addFlag("subscriptions_upsells_get_verified_profile_discount_own_enabled", false);
         addFlag("subscriptions_upsells_get_verified_profile_rotation_enabled", false);
         addFlag("subscriptions_upsells_home_nav_migration_enabled", false);
+        // 12.46.1-prod（2026-11-26 實查 com.x.home.tabbed.s）：舊
+        // subscriptions_upsells_premium_home_nav 改名 ..._offer_enabled，
+        // 舊 dex 注入錨點消失。改由 FeatureFlag 全局 hook getBoolean 統一覆寫。
+        addFlag("subscriptions_upsells_premium_home_nav_offer_enabled", false);
         addFlag("subscriptions_upsells_profile_card_enabled", false);
         addFlag("subscriptions_upsells_quick_display_settings", false);
         addFlag("subscriptions_upsells_track_interactions_enabled", false);
@@ -141,5 +145,11 @@ public class FeatureSwitchPatch {
                 addFlag(item[0], Boolean.valueOf(item[1]));
             }
         }
+        // 2026-11-26：RemovePremiumUpsellPatch 的 dex 注入錨點
+        // subscriptions_upsells_premium_home_nav 已從 12.46.1-prod 消失
+        //（改名 ..._offer_enabled），改由此處統一把所有 premium upsell flag
+        // 註冊進 FLAGS——FeatureFlag 已全局 hook getBoolean（見 FeatureFlagPatch），
+        // 所有布林旗標讀取都會經 flagInfo 覆寫。
+        removePremiumUpsell();
     }
 }
