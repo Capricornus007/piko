@@ -1,3 +1,9 @@
+## [3.11.11](https://github.com/Capricornus007/piko/compare/v3.11.10...v3.11.11) (2026-11-26)
+
+### 🐛 Bug Fixes
+
+* **release:** Attest 只在真正發版且有 .mpp 產物時執行 ([a304e07](https://github.com/Capricornus007/piko/commit/a304e078f253e7af89320e71d1e1d7186440ded0)), references [26-#30](https://github.com/26-/issues/30) [#26-28](https://github.com/Capricornus007/piko/issues/26-28) [#29-30](https://github.com/Capricornus007/piko/issues/29-30)
+
 ## [3.11.10](https://github.com/Capricornus007/piko/compare/v3.11.9...v3.11.10) (2026-11-26)
 
 ### 🐛 Bug Fixes
