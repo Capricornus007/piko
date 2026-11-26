@@ -1,3 +1,9 @@
+## [3.11.7](https://github.com/Capricornus007/piko/compare/v3.11.6...v3.11.7) (2026-11-26)
+
+### 🐛 Bug Fixes
+
+* settings 適配單一 Activity 架構——擴展自帶設定宿主 Activity ([c63fd7c](https://github.com/Capricornus007/piko/commit/c63fd7cd4d26baa8abbd7843317afddd29429e4c)), references [#52](https://github.com/Capricornus007/piko/issues/52)
+
 ## [3.11.6](https://github.com/Capricornus007/piko/compare/v3.11.5...v3.11.6) (2026-11-26)
 
 ### 🐛 Bug Fixes
