@@ -131,34 +131,118 @@ public class Customise {
         return inp;
     }
 
+    /**
+     * 2026-11-26：12.46.1 舊 JsonPageTabs 已被 UrpTimeline 取代，且
+     * UrpTimeline.a 是 title（如 "For You"）不是 tab id。改為彈性讀取
+     * b=Timeline.id / c=segmentedTimelineId / d.b=ScribeConfig.section
+     * （如 "for_you"/"explore_for_you"），並用 matchesChoice 正規化比對。
+     * 保留舊模型 a 欄位相容。
+     */
+    private static boolean matchesChoice(String id, ArrayList choices){
+        if(id == null || id.isEmpty()) return false;
+        String norm = id.toLowerCase(java.util.Locale.US);
+        if(norm.startsWith("explore_")) norm = norm.substring(8);  // explore_for_you → for_you
+        if(choices.contains(id) || choices.contains(norm)) return true;
+        for(Object c : choices){
+            if(c instanceof String && norm.equals(((String) c).toLowerCase(java.util.Locale.US))) return true;
+        }
+        return false;
+    }
+
     public static ArrayList exploretabs(ArrayList inp){
         try{
             ArrayList choices = Pref.customExploreTabs();
 
             if(choices.isEmpty()) return inp;
 
-            Object inpObj = inp.clone();
-            ArrayList<?> arr = (ArrayList<?>) inpObj;
+            ArrayList<?> arr = (ArrayList<?>) inp.clone();
             Iterator itr = inp.iterator();
 
             while (itr.hasNext()) {
-
                 Object obj = itr.next();
+                if(obj == null) continue;
                 Class<?> clazz = obj.getClass();
-                Field field = clazz.getDeclaredField("a");
-                String id = (String) field.get(obj);
+                boolean matched = false;
 
-                if (id!=null && choices.contains(id)){
-                    arr.remove(obj);
+                // 新模型 com.x.repositories.urp.i：b=Timeline.id、c=segmentedId、
+                // a=title；舊模型 JsonPageTabs：a=tab id（保留相容）
+                String[] strFields = {"b", "c", "a"};
+                for(String fn : strFields){
+                    try{
+                        Field f = clazz.getDeclaredField(fn);
+                        Object v = f.get(obj);
+                        if(v instanceof String && matchesChoice((String) v, choices)){
+                            matched = true;
+                            break;
+                        }
+                    }catch(Exception ignore){}
                 }
+                // ScribeConfig.section（com.x.repositories.urp.h.b）
+                if(!matched){
+                    try{
+                        Field d = clazz.getDeclaredField("d");
+                        Object cfg = d.get(obj);
+                        if(cfg != null){
+                            Field b = cfg.getClass().getDeclaredField("b");
+                            Object v = b.get(cfg);
+                            if(v instanceof String && matchesChoice((String) v, choices)) matched = true;
+                        }
+                    }catch(Exception ignore){}
+                }
+                if(matched) arr.remove(obj);
             }
             return arr;
-
 
         }catch (Exception e){
             logger(e);
         }
         return inp;
+    }
+
+    /**
+     * 2026-11-26：12.46.1 的 inline actions 是 com.x.models.m4（InlineActionEntry），
+     * 欄位 a 是 com.x.models.x5 enum（PostActionType）。m4.toString() 現在回
+     * "InlineActionEntry(actionType=..., count=..., isEnabled=...)"，舊的
+     * choices.contains(obj.toString()) 永遠匹配不上。改為反射讀 enum name 再
+     * 映射回舊偏好字符串（對照表見 /tmp/mining_inlinebar_deep.md §2.3）。
+     */
+    private static String inlineBarPrefName(String action){
+        if(action == null) return null;
+        switch(action){
+            case "Reply": return "Reply";
+            case "Retweet":
+            case "UndoRetweet":
+            case "Favorite":    // Like 的偏好值也是 Retweet（既有 piko bug，保持相容）
+            case "Unfavorite":  return "Retweet";
+            case "AddToBookmarks":
+            case "RemoveFromBookmarks": return "AddRemoveBookmarks";
+            case "Share":       return "TwitterShare";   // 新版分享按鈕是 Share
+            case "ViewCount":
+            case "TwitterShare": return action;          // 已被新版 p() 過濾，無實際效果
+            default: return null;
+        }
+    }
+
+    /** 反射取得 InlineActionEntry 的 actionType 枚舉 name（含 R8 欄位名變動 fallback） */
+    private static String inlineBarActionName(Object obj){
+        try{
+            Field f = obj.getClass().getDeclaredField("a");
+            f.setAccessible(true);
+            Object enumObj = f.get(obj);
+            if(enumObj != null) return String.valueOf(enumObj);
+        }catch(Throwable ignored){}
+
+        // fallback：找第一個 enum 型別欄位（防 R8 改欄位名）
+        try{
+            for(Field f : obj.getClass().getDeclaredFields()){
+                if(f.getType().isEnum()){
+                    f.setAccessible(true);
+                    Object enumObj = f.get(obj);
+                    if(enumObj != null) return String.valueOf(enumObj);
+                }
+            }
+        }catch(Throwable ignored){}
+        return null;
     }
 
     public static List inlineBar(List inp){
@@ -172,11 +256,14 @@ public class Customise {
 
             while (itr.hasNext()) {
                 Object obj = itr.next();
-                if (obj != null) {
-                    String itemStr = obj.toString();
-                    if(choices.contains(itemStr)){
-                        list2.remove(obj);
-                    }
+                if (obj == null) continue;
+
+                String pref = inlineBarPrefName(inlineBarActionName(obj));
+                if(pref != null && choices.contains(pref)){
+                    list2.remove(obj);
+                }else if(choices.contains(obj.toString())){
+                    // 舊版相容：obj 仍是舊模型（欄位 a 非 enum）時用原比對
+                    list2.remove(obj);
                 }
             }
             return list2;

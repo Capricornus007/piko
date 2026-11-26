@@ -275,18 +275,34 @@ public class Pref {
         return !Utils.getBooleanPref(Settings.TIMELINE_HIDE_BANNER);
     }
 
-    public static int timelineTab(int tabId) {
-        if(tabId == 17 || tabId == 34){
-            String val = Utils.getStringPref(Settings.CUSTOM_TIMELINE_TABS);
-            // If you want to hide forYou send followin tab Id and vice-versa.
-            if(val.equals("hide_forYou")){
-                return 34;
-            }
-            if (val.equals("hide_following")){
-                return 17;
-            }
+    /**
+     * 2026-11-26：12.46.1 的 timeline tab 從 int id（17=ForYou/34=Following）
+     * 改成 sealed class com.x.home.s 單例（m.INSTANCE=ForYou、l.INSTANCE=Following）。
+     * 此處等價重映射：hide_forYou 時把 ForYou 換成 Following 單例（反之亦然），
+     * 與舊 17↔34 語意完全一致（標籤還在、內容互換）。反射失敗安全 no-op。
+     */
+    public static Object timelineTab(Object tab) {
+        if(tab == null) return tab;
+        String val = Utils.getStringPref(Settings.CUSTOM_TIMELINE_TABS);
+        if(val == null || val.equals("show_both")) return tab;
+
+        String name = tab.toString();  // com.x.home.m/l 的 toString() = "ForYou"/"Following"
+        if(val.equals("hide_forYou") && "ForYou".equals(name)){
+            return siblingInstance(tab, "com.x.home.l");
         }
-        return tabId;
+        if(val.equals("hide_following") && "Following".equals(name)){
+            return siblingInstance(tab, "com.x.home.m");
+        }
+        return tab;
+    }
+
+    private static Object siblingInstance(Object current, String className) {
+        try {
+            Object inst = Class.forName(className).getField("INSTANCE").get(null);
+            return inst != null ? inst : current;
+        } catch (Throwable t) {
+            return current; // R8 日後改 class 名時安全降級
+        }
     }
 
     public static boolean enableForceTranslate() {
