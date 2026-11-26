@@ -291,9 +291,7 @@
     <string name="new_tweets_banner">新しいポスト</string>
     <string name="new_user_prompt_header">Twitter でさらに多くの機能を利用する</string>
     <string name="new_user_prompt_subheader">Twitter をすべての人にとって素晴らしい場所にするため、このアカウントの背後に人間がいることを確認したいと考えています。タイムラインを見たり、他の人とつながったりして、私たちが確認できるようお手伝いください。確認できたら、以下ができるようになります：</string>
-    <string name="news_camera_video_permissions_prompt_subtitle">改良された Twitter カメラを使用するには、カメラ、
-メディアとマイクへのアクセスを
-Twitter に許可してください。</string>
+    <string name="news_camera_video_permissions_prompt_subtitle">改良された Twitter カメラを使用するには、カメラ、\nメディアとマイクへのアクセスを\nTwitter に許可してください。</string>
     <string name="news_reader_mode_subtitle">スレッドを読むためのテキストサイズを設定します。リーダー機能を有効にするには、スレッド内の任意のポストから「リーダーでスレッドを表示」を選択してください。</string>
     <string name="news_subtitle">Twitter 内外でより快適な読書体験を。</string>
     <string name="no_tweets">ポストがありません</string>
@@ -325,7 +323,7 @@ Twitter に許可してください。</string>
     <string name="product_drop_compose_tweet">ポストを作成</string>
     <string name="profile_interstitial_sensitive_media_body">センシティブな画像や言語をポストしている可能性があるため、この警告が表示されています。表示しますか？</string>
     <string name="profile_mute_state_message_tweets">このアカウントのポストをミュートしています</string>
-    <string name="profile_smart_blocked_autoblocked_by_twitter_description">@%1$s のポストの表示とやり取りが一时的に自動ブロックされています。相手がセーフティモードだったときに、あなたのやり取りが虐待的またはスパムの可能性があるとフラグが付けられました。\n\n自動ブロックが常に正しいとは限らないことを承知しており、検出の改善に取り組んでいます。\n\n{{}}セーフティ%2$sモード%2$sとは？{{}}\n\n会話を健全に保ち、自動ブロックされないようにする方法は次のとおりです。</string>
+    <string name="profile_smart_blocked_autoblocked_by_twitter_description">@%1$s のポストの表示とやり取りが一時的に自動ブロックされています。相手がセーフティモードだったときに、あなたのやり取りが虐待的またはスパムの可能性があるとフラグが付けられました。\n\n自動ブロックが常に正しいとは限らないことを承知しており、検出の改善に取り組んでいます。\n\n{{}}セーフティ%2$sモード%2$sとは？{{}}\n\n会話を健全に保ち、自動ブロックされないようにする方法は次のとおりです。</string>
     <string name="profile_smart_blocked_autoblocked_by_twitter_title">Twitter による自動ブロック</string>
     <string name="profile_smart_blocked_remember_the_human_description">あなたのポストの向こう側には、感情を持つ人がいます。</string>
     <string name="profile_tooltip_account_notif">ポストを見逃さないように通知を設定</string>
@@ -380,10 +378,8 @@ Twitter に許可してください。</string>
     <string name="retweet_action_sheet_subtitle_for_verbose_annotation">リポストすると、他の人のポストをフォロワーと公開で共有できます。好きなポスト、共有したいニュース、面白い発見を転送できます。</string>
     <string name="retweet_action_sheet_title_for_verbose_annotation">リポストの仕組み</string>
     <string name="retweet_ambient_notification">%1$s があなたのポストをリポストしました</string>
-    <string name="retweet_dialog_all_links_nudge_prompt_title">まだ Twitter で開いていない リンクを 共有しようとしています。
-{{}}詳細を見る{{}}</string>
-    <string name="retweet_dialog_article_nudge_prompt_title">まだ Twitter で開いていない 記事を 共有しようとしています。
-{{}}詳細を見る{{}}</string>
+    <string name="retweet_dialog_all_links_nudge_prompt_title">まだ Twitter で開いていない リンクを 共有しようとしています。\n{{}}詳細を見る{{}}</string>
+    <string name="retweet_dialog_article_nudge_prompt_title">まだ Twitter で開いていない 記事を 共有しようとしています。\n{{}}詳細を見る{{}}</string>
     <string name="retweet_protected_education_description">@%s をフォローしている人だけが ポストを見られます。</string>
     <string name="retweet_protected_education_title">保護されたポストは リポストできません</string>
     <string name="retweet_with_comment2">コメント付きでリポスト</string>
@@ -768,8 +764,7 @@ Twitter に許可してください。</string>
     <string name="timeline_settings_section_pinned">ピン留め</string>
     <string name="twitter_blue_edit_upsell_bottom_sheet_body">Premium サブスクライバーは、ポストの編集などの機能をいち早く利用できます。編集機能を使うと、ポスト公開後 1 時間以内に最大 5 回まで更新できます。</string>
     <string name="users_block_message_when_view_enabled">相手はあなたの公開ポストを見られますが、インタラクションはできなくなります。@%1$s はあなたをフォローしたりメッセージを送ったりできなくなり、あなたには相手からの通知が届きません。</string>
-    <string name="users_unblock_message_when_view_enabled">相手はあなたをフォローし、ポストとインタラクションできるようになります。
-（アカウントが保護されている場合は、再度フォローをリクエストする必要があります）</string>
+    <string name="users_unblock_message_when_view_enabled">相手はあなたをフォローし、ポストとインタラクションできるようになります。\n（アカウントが保護されている場合は、再度フォローをリクエストする必要があります）</string>
     <string name="welcome_to_communities_dialog_info_text_row_2">あなたのポストはコミュニティのメンバーとあなたのフォロワーに共有されます。</string>
     <string name="x_lite_profile_own_get_verified_card_body_unlock_features">認証バッジ、編集機能など、Premium 機能を利用できるようになります。</string>
     <string name="x_lite_quick_promote_boost_post">ポストをブーストする</string>
