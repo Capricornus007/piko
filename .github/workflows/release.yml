@@ -53,15 +53,54 @@ jobs:
         # 在 action 自己的安裝目錄裡）。repo 的 package.json 已含全套
         # semantic-release 26 + 插件 + vendor shim，直接 npx 原地跑。
         run: |
-          npx --no-install semantic-release
-          TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          # 本次运行前的最新 tag；semantic-release 若因「本地 main 落後遠端」等
+          # 原因判定不發版（run 45822999327/#26 實錘），TAG 仍會指向舊 tag，
+          # 單純 git describe 會誤判成「已發布」→ Attest 去找不存在的 .mpp 而判紅。
+          BEFORE_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          # npx 不論成敗都要把輸出打到 CI log（失敗時更要看到），且保留其
+          # 結束碼由 bash -e 正常判紅。用 set +e 包住、cat 後再依 $rc 決定
+          # 是否手动 exit，避免 `npx | tee` 在無 pipefail 下吞錯、也避免
+          # `npx > file` 在 bash -e 下直接中止連 cat 都看不到（run #31 實錘）。
+          set +e
+          npx --no-install semantic-release > /tmp/semantic-release.log 2>&1
+          _sr_rc=$?
+          set -e
+          cat /tmp/semantic-release.log
+          if [ "$_sr_rc" -ne 0 ]; then
+            echo "::error::semantic-release 結束碼 $_sr_rc（完整輸出見上方）"
+            exit "$_sr_rc"
+          fi
+          AFTER_TAG=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          # 只有 tag 真的往前進才算本次發布；另外 semantic-release 明確說
+          # 「won't be published」時一律當沒發（雙保險，防 tag 抓取竞争）。
+          if grep -q "won't be published" /tmp/semantic-release.log; then
+            PUBLISHED=false
+          elif [ -n "$AFTER_TAG" ] && [ "$AFTER_TAG" != "$BEFORE_TAG" ]; then
+            PUBLISHED=true
+          else
+            PUBLISHED=false
+          fi
           {
-            echo "new_release_published=$([ -n "$TAG" ] && echo true || echo false)"
-            echo "new_release_git_tag=$TAG"
+            echo "new_release_published=$PUBLISHED"
+            echo "new_release_git_tag=$AFTER_TAG"
           } >> "$GITHUB_OUTPUT"
+          echo "semantic-release: BEFORE_TAG=$BEFORE_TAG AFTER_TAG=$AFTER_TAG PUBLISHED=$PUBLISHED"
+
+      # 即使判定為已發布，仍要有實際 .mpp 產物才能 attest（並發/競爭時
+      # gradle 插件可能跳過 build，雙重守衛避免 null subject 判紅）。
+      - name: Check artifacts present
+        id: artifacts
+        if: steps.release.outputs.new_release_published == 'true'
+        run: |
+          if ls patches/build/libs/patches-*.mpp >/dev/null 2>&1; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::標記為已發布但找不到 patches/build/libs/patches-*.mpp，跳過 Attest"
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Attest
-        if: steps.release.outputs.new_release_published == 'true'
+        if: steps.release.outputs.new_release_published == 'true' && steps.artifacts.outputs.present == 'true'
         uses: actions/attest-build-provenance@v3
         with:
           subject-name: 'Piko Patches ${{ steps.release.outputs.new_release_git_tag }}'

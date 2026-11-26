@@ -2,4 +2,5 @@
 <resources>
     <string name="piko_title_settings">Piko設定</string>
     <string name="piko_title_piko_patches">Pikoパッチ</string>
+    <string name="piko_name" translatable="false">Piko</string>
 </resources>

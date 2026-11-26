@@ -460,7 +460,7 @@
     <string name="piko_tap_to_view">toque para ver</string>
     <string name="piko_media_expired">link expirado</string>
     <string name="piko_media_not_available">mídia não disponível</string>
-    <string name="piko_deleted_a_message">%@ excluiu uma mensagem</string>
+    <string name="piko_deleted_a_message">%s excluiu uma mensagem</string>
     <string name="piko_someone">Alguém</string>
     <string name="piko_deleted_messages_channel">Excluir mensagens</string>
     <string name="piko_deleted_messages_channel_desc">Notifica quando uma mensagem recebida não é enviada</string>

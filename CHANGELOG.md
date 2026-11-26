@@ -1,3 +1,21 @@
+## [3.11.13](https://github.com/Capricornus007/piko/compare/v3.11.12...v3.11.13) (2026-11-26)
+
+### 🐛 Bug Fixes
+
+* **release:** backmerge 改 merge 策略，修 Release [#32](https://github.com/Capricornus007/piko/issues/32) dev 同步 non-fast-forward ([2fe7ea0](https://github.com/Capricornus007/piko/commit/2fe7ea074e3740d0cc24ba5239f39f1bb0716ff9))
+
+## [3.11.12](https://github.com/Capricornus007/piko/compare/v3.11.11...v3.11.12) (2026-11-26)
+
+### 🐛 Bug Fixes
+
+* **release:** npx 失敗時仍打印 semantic-release 日誌（[#31](https://github.com/Capricornus007/piko/issues/31) 吞錯回歸） ([753100f](https://github.com/Capricornus007/piko/commit/753100fd17e3943a1dd153793909b08fee99f921))
+
+## [3.11.11](https://github.com/Capricornus007/piko/compare/v3.11.10...v3.11.11) (2026-11-26)
+
+### 🐛 Bug Fixes
+
+* **release:** Attest 只在真正發版且有 .mpp 產物時執行 ([a304e07](https://github.com/Capricornus007/piko/commit/a304e078f253e7af89320e71d1e1d7186440ded0)), references [26-#30](https://github.com/26-/issues/30) [#26-28](https://github.com/Capricornus007/piko/issues/26-28) [#29-30](https://github.com/Capricornus007/piko/issues/29-30)
+
 ## [3.11.10](https://github.com/Capricornus007/piko/compare/v3.11.9...v3.11.10) (2026-11-26)
 
 ### 🐛 Bug Fixes
