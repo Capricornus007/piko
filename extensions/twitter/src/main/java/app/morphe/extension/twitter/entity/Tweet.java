@@ -55,18 +55,17 @@ public class Tweet extends Debug {
     private ArrayList<ExtMediaEntities> getExtendedMediaEntities() throws Exception {
         ArrayList<ExtMediaEntities> extMediaEntitiesArrayList = new ArrayList();
 
-        // c()Lcom/twitter/model/core/entity/c0;
+        // 2026-11-28：12.46.1 的 u0.g() 直接回傳 Lkotlinx/collections/immutable/c;，
+        // 那是個 extends java.util.List 的 interface。舊的「二段式 superclass +
+        // extMediaList 欄位」反射（舊 c0→s→a:List）已物理失效。
+        // 注意：下面兩個字串常數必須留在方法裡——patch 端的
+        // changeFirstString(mediaMethod) 與 changeStringAt(1, extMediaListField)
+        // 仍然會寫入這兩個槽位；把它們刪掉會讓 patch 找不到注入點。
         Object mediaRootObject = super.getMethod("mediaMethod");
-        Class<?> mediaRootObjectClass = mediaRootObject.getClass();
-
-        // Lcom/twitter/model/core/entity/s;
-        Class<?> superClass = mediaRootObjectClass.getSuperclass();
-        Object superClassInstance = superClass.cast(mediaRootObject);
-
-        // a:List
-        List<?> list = (List<?>) super.getField(superClass, superClassInstance, "extMediaList");
-
-        assert list != null;
+        List<?> list = (List<?>) mediaRootObject;
+        if (list == null) {
+            throw new IllegalStateException("extMediaList is null");
+        }
 
         list.forEach(item ->{
             extMediaEntitiesArrayList.add(new ExtMediaEntities(item));
