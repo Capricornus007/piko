@@ -479,4 +479,15 @@ It's recommended to read this before using this feature. It includes some import
     <string name="spaces_grid_tab">Spaces</string>
     <string name="subscriptions_drawer_menu_title">Subscriptions</string>
     <string name="theme_dim_title">Dim</string>
+
+    <!-- 2026-11-28 第二輪：上面 22 個是用「只比對 piko strings」的粗糙邏輯補的，
+         其中 X 12.46.1 其實還留著 majority（aapt2 dump 實錘）。真正被移除、且
+         values/twitter/arrays.xml 仍以 @string/ 參考的只有這 4 個——用
+         「X app 資源表(16306) ∪ piko strings(412)」比對 100 個 array 引用得出，
+         morphe twitter job 的 reandroid XmlEncodeException("Unexpected array value")
+         就是這 4 個之一（profile_tab_title_timeline）。補基礎 locale 讓陣列永遠可解析。 -->
+    <string name="detail_filter_most_liked_title">Most liked</string>
+    <string name="detail_filter_recent_title">Recent</string>
+    <string name="profile_tab_title_timeline">Posts</string>
+    <string name="share_tweet_sheet_title">Share post</string>
 </resources>

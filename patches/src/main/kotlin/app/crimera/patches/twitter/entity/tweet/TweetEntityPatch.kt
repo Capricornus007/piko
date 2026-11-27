@@ -87,18 +87,16 @@ val tweetEntityPatch =
                     .name
             TweetExtMediaEntitiesListFingerprint.changeStringAt(1, extMediaListField)
 
-            val getNoteTweetMethod =
-                tweetObjectMethods
-                    .firstOrNull { it.returnType.contains("notetweet") }
-                    ?.name
-                    ?: throw PatchException("getNoteTweetMethod not found")
-            TweetLongTextFingerprint.changeFirstString(getNoteTweetMethod)
-
-            val longTextField =
-                LongTweetObjectFingerprint.classDef.fields
-                    .first { it.type == "Ljava/lang/String;" }
-                    .name
-            TweetLongTextFingerprint.changeStringAt(1, longTextField)
+            // 2026-11-28：note tweet（長文）二段式注入移除。12.46.1 全 dex 沒有
+            // 任何方法/欄位回傳或持有 note tweet 內容物件（notes/j 只由
+            // kotlinx.serialization 反序列化建立；u0 上也沒有 *notetweet* accessor），
+            // 舊的 `firstOrNull { returnType.contains("notetweet") }` 必然找不到而
+            // 拋 "getNoteTweetMethod not found"，連帶 Native translator / Share Tweet
+            // as Image 兩個 dependent patch 一起失敗。
+            // 上游已把 note tweet 內文合併進 CanonicalPost(u0).getText()（就是上面
+            // getShortText 注入的 GetTextFromTextObjectFingerprint 同一入口），
+            // extension 的 Tweet.getLongText() 已改為複用該入口，故此處不再注入
+            // noteTweetMethod / longTextField 兩個死槽位。功能零損失。
 
             // 2026-11-27：舊的 com.twitter.database.legacy.tdbh(TweetInfo object) 與
             // supplemental_language 欄位在 12.46.1 已物理移除。language 現在直接是
