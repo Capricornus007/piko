@@ -49,9 +49,16 @@ val tweetEntityPatch =
             val getTextObjectFromTweetObjectMethodName = GetTextFromTextObjectFingerprint.method.name
             TweetShortTextFingerprint.changeFirstString(getTextObjectFromTweetObjectMethodName)
 
+            // 12.46.1: CanonicalPost(u0) 已無回傳原始 J 的方法；原本的
+            // .first { it.returnType == "J" } 在 12.46.1 必然拋
+            // NoSuchElementException（CI 的 "Collection contains no element"
+            // 就是這裡）。extension 端 getTweetUserId() 做 (Long) 轉型，
+            // 反射需要一個回傳 boxed java.lang.Long 的方法；u0 上唯一符合的
+            // 是 n()（selfThreadId, field h: Ljava/lang/Long;）。改選它讓
+            // patch 能套用、反射不崩。
             val getTweetUserIdMethod =
                 tweetObjectMethods
-                    .first { it.returnType == "J" }
+                    .first { it.returnType == "Ljava/lang/Long;" }
                     .name
             TweetUserIdFingerprint.changeFirstString(getTweetUserIdMethod)
 
@@ -71,9 +78,13 @@ val tweetEntityPatch =
                 } ?: throw PatchException("getMediaObject not found")
             TweetExtMediaEntitiesListFingerprint.changeFirstString(getMediaObjectMethod.name)
 
+            // 12.46.1: g0(PostEntityList) 有 7 個 List 欄位，media 是第 3 個
+            // （Fingerprints.kt 註明）。舊的 first { contains("List") } 會選到
+            // mentions，讓 getExtendedMediaEntities 抓錯欄位。
             val extMediaListField =
                 TweetMediaEntityClassFingerprint.classDef.fields
-                    .first { it.type.contains("List") }
+                    .filter { it.type == "Ljava/util/List;" }
+                    .elementAt(2)
                     .name
             TweetExtMediaEntitiesListFingerprint.changeStringAt(1, extMediaListField)
 
