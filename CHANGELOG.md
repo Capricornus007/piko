@@ -1,3 +1,9 @@
+## [3.12.5](https://github.com/Capricornus007/piko/compare/v3.12.4...v3.12.5) (2026-11-27)
+
+### 🐛 Bug Fixes
+
+* **x46:** HandleModernShareSheetLinks 改走混淆後 r1 post 物件 (移除失配的 ContextualPost field 鏈) ([0b09593](https://github.com/Capricornus007/piko/commit/0b09593d7a412ba730b7469c031ee7c311b2e58c))
+
 ## [3.12.4](https://github.com/Capricornus007/piko/compare/v3.12.3...v3.12.4) (2026-11-27)
 
 ### 🐛 Bug Fixes
