@@ -98,10 +98,19 @@ public class Tweet extends Debug {
     }
 
     public String getLongText() throws Exception {
-        // j()Lcom/twitter/model/notetweet/b;
-        Object noteTweetObj = super.getMethod("noteTweetMethod");
-        String data = noteTweetObj != null ? (String) super.getField(noteTweetObj, "longTextField") : null;
-        return data;
+        // 2026-11-28 / X 12.46.1：舊的 note tweet 二段式
+        //   u0.<notetweet accessor> -> noteTweetObj -> getField("longTextField")
+        // 已物理失效：全 dex 沒有任何方法/欄位回傳或持有 note tweet 內容物件
+        // （Lcom/x/models/notes/j; 只由 kotlinx.serialization 的 Companion/Lazy
+        //  反序列化建立，反射拿不到；u0 上也沒有回傳 *notetweet* 的方法）。
+        //
+        // 12.46.1 上游把 note tweet（長文）內文合併進 CanonicalPost(u0).getText()，
+        // 也就是 getShortText() 已經注入的同一個入口（GetTextFromTextObjectFingerprint
+        // 匹配 u0.getText()->String）。所以 longText 直接複用該入口即可拿到完整內文，
+        // 不是降級、不是砍功能——是跟随上游重構。當年 note tweet 需要獨立二段式是因為
+        // 那時 getText() 只回傳截斷的 previews；現在 getText() 已是完整本文。
+        Object data = super.getMethod("tweetEntityClass");
+        return data != null ? (String) data : null;
     }
 
     public String getShortText() throws Exception {
