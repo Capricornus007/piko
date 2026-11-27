@@ -1,3 +1,9 @@
+## [3.12.9](https://github.com/Capricornus007/piko/compare/v3.12.8...v3.12.9) (2026-11-27)
+
+### 🐛 Bug Fixes
+
+* **x46:** TweetEntity 改 boxed-Long getter 修 NoSuchElement；arrays.xml 非法反斜線改 &apos; 修資源重建 ([9b7e7f7](https://github.com/Capricornus007/piko/commit/9b7e7f74870c9f63f31bb243aa7e5d4740487ece))
+
 ## [3.12.8](https://github.com/Capricornus007/piko/compare/v3.12.7...v3.12.8) (2026-11-27)
 
 ### 🐛 Bug Fixes
