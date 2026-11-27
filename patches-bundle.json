@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-11-26T20:29:14",
-  "description": "## [3.12.2](https://github.com/Capricornus007/piko/compare/v3.12.1...v3.12.2) (2026-11-26)\n\n### 🐛 Bug Fixes\n\n* **x46:** TweetNames 實體模型重構——作者方法上移到 ni 的兩段式反射（最後一塊） ([08c800f](https://github.com/Capricornus007/piko/commit/08c800f5476aea36ebbb1b35d8eac188d6018a3b))",
-  "download_url": "https://github.com/Capricornus007/piko/releases/download/v3.12.2/patches-3.12.2.mpp",
-  "signature_download_url": "https://github.com/Capricornus007/piko/releases/download/v3.12.2/patches-3.12.2.mpp.asc",
-  "version": "3.12.2"
+  "created_at": "2026-11-27T02:49:54",
+  "description": "## [3.12.3](https://github.com/Capricornus007/piko/compare/v3.12.2...v3.12.3) (2026-11-27)\n\n### 🐛 Bug Fixes\n\n* **x46:** EnableForcePip 從失配改為 UI 閘門換錨（PiP 未被移除） ([a732389](https://github.com/Capricornus007/piko/commit/a732389608fda8bbdcf387471ad3838f7e147589)), references [#0](https://github.com/Capricornus007/piko/issues/0)\n* **x46:** HideLiveThreads 從 no-op 恢復——Fleets 改名 Fleetline/Spaces bar 換錨 ([ae2b68c](https://github.com/Capricornus007/piko/commit/ae2b68c76818dac609041ca030913e90a0466a90))",
+  "download_url": "https://github.com/Capricornus007/piko/releases/download/v3.12.3/patches-3.12.3.mpp",
+  "signature_download_url": "https://github.com/Capricornus007/piko/releases/download/v3.12.3/patches-3.12.3.mpp.asc",
+  "version": "3.12.3"
 }
