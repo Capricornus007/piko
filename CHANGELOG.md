@@ -1,3 +1,9 @@
+## [3.12.7](https://github.com/Capricornus007/piko/compare/v3.12.6...v3.12.7) (2026-11-27)
+
+### 🐛 Bug Fixes
+
+* **x46:** ShowSensitiveMedia 改鎖 MediaVisibilityResults(h) 建構子欄位寫入 ([31aa6e9](https://github.com/Capricornus007/piko/commit/31aa6e94adb51f5a03d7ca8830ec822b3db0c8ee))
+
 ## [3.12.6](https://github.com/Capricornus007/piko/compare/v3.12.5...v3.12.6) (2026-11-27)
 
 ### 🐛 Bug Fixes

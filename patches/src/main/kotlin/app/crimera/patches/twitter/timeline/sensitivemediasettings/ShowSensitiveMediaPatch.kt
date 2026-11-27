@@ -16,6 +16,7 @@ import app.morphe.patcher.InstructionLocation.MatchAfterImmediately
 import app.morphe.patcher.InstructionLocation.MatchAfterWithin
 import app.morphe.patcher.extensions.InstructionExtensions.addInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.addInstructions
+import app.morphe.patcher.extensions.InstructionExtensions.instructions
 import app.morphe.patcher.methodCall
 import app.morphe.patcher.opcode
 import app.morphe.patcher.patch.PatchException
@@ -24,9 +25,11 @@ import app.morphe.patcher.util.proxy.mutableTypes.MutableMethod.Companion.toMuta
 import app.morphe.patcher.resource.ResourceType
 import app.morphe.patcher.resourceLiteral
 import app.morphe.patcher.util.findFreeRegister
+import app.morphe.patcher.util.getReference
 import app.morphe.patcher.util.registersUsed
 import com.android.tools.smali.dexlib2.AccessFlags
 import com.android.tools.smali.dexlib2.Opcode
+import com.android.tools.smali.dexlib2.iface.reference.FieldReference
 import com.android.tools.smali.dexlib2.builder.MutableMethodImplementation
 import com.android.tools.smali.dexlib2.immutable.ImmutableMethod
 
@@ -42,8 +45,13 @@ private const val JSON_SENSITIVE_MEDIA_WARNING_CLASS_PREFIX =
     "Lcom/twitter/model/json/core/JsonSensitiveMediaWarning"
 private const val JSON_BLURRED_IMAGE_INTERSTITIAL_CLASS_PREFIX =
     "Lcom/twitter/model/json/mediavisibility/JsonBlurredImageInterstitial"
-private const val BLURRED_IMAGE_INTERSTITIAL_CLASS =
-    "Lcom/x/models/interstitial/BlurImageInterstitial;"
+// 12.46.1: R8 obfuscated MediaVisibilityResults -> com/x/models/interstitial/h and
+// BlurImageInterstitial -> com/x/models/interstitial/e. The old getBlurImageInterstitial()
+// method no longer exists; the value is stored straight into h->a by <init>.
+private const val MEDIA_VISIBILITY_RESULTS_CLASS =
+    "Lcom/x/models/interstitial/h;"
+private const val BLUR_FIELD_NAME = "a"
+private const val BLUR_FIELD_TYPE = "Lcom/x/models/interstitial/e;"
 
 private inline fun applyOptionalPatch(block: () -> Unit): Boolean =
     try {
@@ -117,19 +125,12 @@ private object SensitiveMediaInterstitialViewFingerprint : Fingerprint(
     )
 )
 
+// 12.46.1: MediaVisibilityResults (h) has no getBlurImageInterstitial() getter;
+// <init> stores the BlurImageInterstitial straight into field a. Match <init> by
+// its defining class + the field write so we can filter the value there.
 private object ComposeSensitiveMediaInterstitialFingerprint : Fingerprint(
-    returnType = "Ljava/lang/Object;",
-    parameters = listOf("Landroidx/compose/runtime/Composer;", "I"),
-    filters = listOf(
-        methodCall(
-            opcode = Opcode.INVOKE_VIRTUAL,
-            smali = "Lcom/x/models/interstitial/MediaVisibilityResults;->getBlurImageInterstitial()$BLURRED_IMAGE_INTERSTITIAL_CLASS",
-        ),
-        opcode(
-            opcode = Opcode.MOVE_RESULT_OBJECT,
-            location = MatchAfterImmediately()
-        )
-    )
+    definingClass = MEDIA_VISIBILITY_RESULTS_CLASS,
+    name = "<init>",
 )
 
 @Suppress("unused")
@@ -299,20 +300,29 @@ val sensitiveMediaPatch =
             // region Bypass the Compose sensitive-media interstitial
 
             val appliedComposeHook = applyOptionalPatch {
-                ComposeSensitiveMediaInterstitialFingerprint.let {
-                    it.method.apply {
-                        val match = it.instructionMatches.last()
-                        val index = match.index
-                        val register = match.instruction.registersUsed[0]
+                ComposeSensitiveMediaInterstitialFingerprint.method.apply {
+                    // 12.46.1: <init> stores the BlurImageInterstitial into h->a via
+                    // iput-object. Filter that value through the extension so the
+                    // interstitial becomes null when "Show sensitive media" is on.
+                    val storeIndex =
+                        instructions.indexOfFirst {
+                            it.opcode == Opcode.IPUT_OBJECT &&
+                                it.getReference<FieldReference>()?.let { ref ->
+                                    ref.definingClass == MEDIA_VISIBILITY_RESULTS_CLASS &&
+                                        ref.name == BLUR_FIELD_NAME &&
+                                        ref.type == BLUR_FIELD_TYPE
+                                } == true
+                        }
+                    if (storeIndex < 0) throw PatchException("12.46.1: h->a blur field store not found")
 
-                        addInstructions(
-                            index + 1,
-                            """
-                                invoke-static { v$register }, $EXTENSION_CLASS->showSensitiveMedia($BLURRED_IMAGE_INTERSTITIAL_CLASS)$BLURRED_IMAGE_INTERSTITIAL_CLASS
-                                move-result-object v$register
-                            """
-                        )
-                    }
+                    val blurRegister = instructions[storeIndex].registersUsed[0]
+                    addInstructions(
+                        storeIndex,
+                        """
+                        invoke-static { v$blurRegister }, $EXTENSION_CLASS->filterBlurImageInterstitial(Ljava/lang/Object;)Ljava/lang/Object;
+                        move-result-object v$blurRegister
+                        """
+                    )
                 }
             }
 
