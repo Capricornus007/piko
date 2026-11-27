@@ -212,6 +212,13 @@ public class Pref {
         return fleets;
     }
 
+    /** 2026-11-26：12.46.1 的 Fleets/Live Threads 改名搬遷為 Fleetline/Spaces bar，
+     *  新 patch 在唯一 mapper com.x.spaces.bar.q.f() 開頭呼叫此方法判断開關
+     *  （回傳 null 讓呼叫端既有 if-eqz 略過該 item）。 */
+    public static boolean hideLiveThreads() {
+        return Utils.getBooleanPref(Settings.TIMELINE_HIDE_LIVETHREADS);
+    }
+
     public static Map polls(Map map) {
         if (Utils.getBooleanPref(Settings.TIMELINE_SHOW_POLL_RESULTS)) {
             try {
