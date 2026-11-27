@@ -1,3 +1,9 @@
+## [3.12.11](https://github.com/Capricornus007/piko/compare/v3.12.10...v3.12.11) (2026-11-27)
+
+### 🐛 Bug Fixes
+
+* **x46:** 修 morphe twitter 剩餘兩失敗點——note tweet 內文合併進 getText、array 補 4 個真失效 string ([ecf5937](https://github.com/Capricornus007/piko/commit/ecf593756b1eb072e9d02292b3f09225a169b371))
+
 ## [3.12.10](https://github.com/Capricornus007/piko/compare/v3.12.9...v3.12.10) (2026-11-27)
 
 ### 🐛 Bug Fixes
