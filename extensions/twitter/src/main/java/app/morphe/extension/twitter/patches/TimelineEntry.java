@@ -135,6 +135,14 @@ public class TimelineEntry {
     public static BlurImageInterstitial showSensitiveMedia(BlurImageInterstitial interstitial) {
         return showSensitiveMedia ? null : interstitial;
     }
+
+    // 12.46.1: BlurImageInterstitial is obfuscated (com.x.models.interstitial.e), so the
+    // typed overload above cannot be referenced from the patch. Use an Object-based
+    // filter instead: the patch nulls out MediaVisibilityResults.blurImageInterstitial
+    // by passing the raw field value through here.
+    public static Object filterBlurImageInterstitial(Object interstitial) {
+        return showSensitiveMedia ? null : interstitial;
+    }
     public static void showSensitiveImage(View view) {
         if (showSensitiveMedia && view != null) {
             // Click the 'Show' button on the timeline to make the blurred image visible
