@@ -135,9 +135,12 @@ internal object LongTweetObjectFingerprint : Fingerprint(
         ),
 )
 
+// 12.46.1: CanonicalPost (com.x.models.u0) itself exposes getText()->String;
+// the old intermediate text-object class (com.twitter.model.core.entity.* with
+// getText()->CharSequence) was removed. Match the getter directly on u0 so
+// TweetEntityPatch can inject its (unobfuscated) name into Tweet.getShortText.
 internal object GetTextFromTextObjectFingerprint : Fingerprint(
-    accessFlags = listOf(AccessFlags.PUBLIC, AccessFlags.FINAL),
+    definingClass = "Lcom/x/models/u0;",
     name = "getText",
-    returnType = "Ljava/lang/CharSequence;",
-    definingClass = "Lcom/twitter/model/core/entity/",
+    returnType = "Ljava/lang/String;",
 )
