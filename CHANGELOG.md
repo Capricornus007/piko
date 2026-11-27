@@ -1,3 +1,9 @@
+## [3.12.6](https://github.com/Capricornus007/piko/compare/v3.12.5...v3.12.6) (2026-11-27)
+
+### 🐛 Bug Fixes
+
+* **x46:** TweetEntity getText 改走 u0(CanonicalPost) 直接 getter ([f099a0e](https://github.com/Capricornus007/piko/commit/f099a0ed6c5c9f109278f84cdf01731830c0c34c))
+
 ## [3.12.5](https://github.com/Capricornus007/piko/compare/v3.12.4...v3.12.5) (2026-11-27)
 
 ### 🐛 Bug Fixes

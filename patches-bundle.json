@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-11-27T11:40:11",
-  "description": "## [3.12.5](https://github.com/Capricornus007/piko/compare/v3.12.4...v3.12.5) (2026-11-27)\n\n### 🐛 Bug Fixes\n\n* **x46:** HandleModernShareSheetLinks 改走混淆後 r1 post 物件 (移除失配的 ContextualPost field 鏈) ([0b09593](https://github.com/Capricornus007/piko/commit/0b09593d7a412ba730b7469c031ee7c311b2e58c))",
-  "download_url": "https://github.com/Capricornus007/piko/releases/download/v3.12.5/patches-3.12.5.mpp",
-  "signature_download_url": "https://github.com/Capricornus007/piko/releases/download/v3.12.5/patches-3.12.5.mpp.asc",
-  "version": "3.12.5"
+  "created_at": "2026-11-27T12:14:11",
+  "description": "## [3.12.6](https://github.com/Capricornus007/piko/compare/v3.12.5...v3.12.6) (2026-11-27)\n\n### 🐛 Bug Fixes\n\n* **x46:** TweetEntity getText 改走 u0(CanonicalPost) 直接 getter ([f099a0e](https://github.com/Capricornus007/piko/commit/f099a0ed6c5c9f109278f84cdf01731830c0c34c))",
+  "download_url": "https://github.com/Capricornus007/piko/releases/download/v3.12.6/patches-3.12.6.mpp",
+  "signature_download_url": "https://github.com/Capricornus007/piko/releases/download/v3.12.6/patches-3.12.6.mpp.asc",
+  "version": "3.12.6"
 }
