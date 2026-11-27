@@ -1,3 +1,9 @@
+## [3.12.10](https://github.com/Capricornus007/piko/compare/v3.12.9...v3.12.10) (2026-11-27)
+
+### 🐛 Bug Fixes
+
+* **x46:** 修 twitter 剩餘兩個失敗點——media accessor 改 immutable/c、array 失效 string 補基礎 locale ([4eb2ab7](https://github.com/Capricornus007/piko/commit/4eb2ab74ee725b2155cc04837ad7dbd327bb51b6))
+
 ## [3.12.9](https://github.com/Capricornus007/piko/compare/v3.12.8...v3.12.9) (2026-11-27)
 
 ### 🐛 Bug Fixes
