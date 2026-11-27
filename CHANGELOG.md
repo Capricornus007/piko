@@ -1,3 +1,10 @@
+## [3.12.4](https://github.com/Capricornus007/piko/compare/v3.12.3...v3.12.4) (2026-11-27)
+
+### 🐛 Bug Fixes
+
+* **x46:** BringBackTwitter 資源錨點 Theme.LaunchScreen→Theme.X.SplashScreen（12.46.1 已更名） ([29ea346](https://github.com/Capricornus007/piko/commit/29ea346f8b500e4ba28f5617635f418dad2e8ab7))
+* **x46:** HandleModernShareSheetLinks 鎖定 sharesheet/l class（12.46.1 兩字串拆到不同 method） ([da99e5d](https://github.com/Capricornus007/piko/commit/da99e5d29bb439faffb9b9674267186aca1e51e1))
+
 ## [3.12.3](https://github.com/Capricornus007/piko/compare/v3.12.2...v3.12.3) (2026-11-27)
 
 ### 🐛 Bug Fixes

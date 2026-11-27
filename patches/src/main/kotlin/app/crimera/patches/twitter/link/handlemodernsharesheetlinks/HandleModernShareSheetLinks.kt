@@ -26,11 +26,11 @@ import com.android.tools.smali.dexlib2.builder.BuilderOffsetInstruction
 import java.util.logging.Logger
 
 internal object NewShareSheetLinkFingerprint : Fingerprint(
-    strings =
-        listOf(
-            "tweet-",
-            "https://x.com/i/status/",
-        ),
+    // 12.46.1：R8 把 sharesheet class 混淆成 com/x/dms/components/sharesheet/l，
+    // 且 "tweet-" 與 "https://x.com/i/status/" 被拆到不同 method（舊版同 method
+    // 才能 method 級匹配）。直接鎖定 class + 單一字串定位 method，避免不唯一。
+    definingClass = "Lcom/x/dms/components/sharesheet/l;",
+    strings = listOf("https://x.com/i/status/"),
 )
 
 internal object NewShareSheetLinkFingerprint2 : Fingerprint(
@@ -72,7 +72,8 @@ val handleModernShareSheetLinks =
                     contextualPostField =
                         mutableClassDefBy(shareSheetField.type).fields.first { it.type == contextualPostClass }
 
-                    val strIndex = stringMatches[1].index
+                    // 12.46.1：fingerprint 改用單一字串，故取 [0]（原 [1] 即 https://x.com/i/status/）
+                    val strIndex = stringMatches[0].index
 
                     method.apply {
                         val dummyRegister =
