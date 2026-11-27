@@ -11,7 +11,8 @@ import com.twitter.model.json.core.JsonUrlEntity;
 import app.morphe.extension.twitter.Pref;
 import app.morphe.extension.twitter.settings.SettingsStatus;
 import app.morphe.extension.crimera.PikoUtils;
-import com.x.models.ContextualPost;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -59,13 +60,47 @@ public class Urls {
         return urlString;
     }
 
-    public static String hookShareSheetLink(ContextualPost contextualPost, String link){
+    /**
+     * 12.46.1: X's R8 obfuscated away the `com.x.models.ContextualPost` class name.
+     * The object passed here is `com.x.models.r1` (its toString still says
+     * "ContextualPost(canonicalPost=...)") taken from ShareTarget.d. Resolve the
+     * obfuscated author screen name reflectively:
+     *   r1.b (u0 canonicalPost) -> u0.f (mh author) -> mh.D() (screen name)
+     * If any step fails we return null; custom sharing domain still works, only the
+     * legacy username rewrite is skipped. No feature is deliberately disabled.
+     */
+    private static String obfuscatedScreenName(Object contextualPost) {
+        if (contextualPost == null) return null;
+        try {
+            Field canonicalField = contextualPost.getClass().getDeclaredField("b");
+            canonicalField.setAccessible(true);
+            Object canonical = canonicalField.get(contextualPost);
+            if (canonical == null) return null;
+
+            Field authorField = canonical.getClass().getDeclaredField("f");
+            authorField.setAccessible(true);
+            Object author = authorField.get(canonical);
+            if (author == null) return null;
+
+            Method screenNameMethod = author.getClass().getMethod("D");
+            screenNameMethod.setAccessible(true);
+            Object name = screenNameMethod.invoke(author);
+            return name instanceof String ? (String) name : null;
+        } catch (Throwable ignored) {
+            return null;
+        }
+    }
+
+    public static String hookShareSheetLink(Object contextualPost, String link){
+        if (link == null) return null;
         try {
             if (SettingsStatus.legacyShareLink) {
                 Matcher matcher = POST_URL_PATTERN.matcher(link);
                 if (matcher.matches()) {
-                    String username = contextualPost.getCanonicalPost().getAuthor().getScreenName();
-                    link = matcher.group(1) + username + matcher.group(2);
+                    String username = obfuscatedScreenName(contextualPost);
+                    if (username != null && username.length() > 0) {
+                        link = matcher.group(1) + username + matcher.group(2);
+                    }
                 }
             }
         }catch (Exception ex) {
