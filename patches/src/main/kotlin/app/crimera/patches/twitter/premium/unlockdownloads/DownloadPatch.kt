@@ -6,7 +6,6 @@
 
 package app.crimera.patches.twitter.premium.unlockdownloads
 
-import app.crimera.patches.twitter.entity.extMedia.MediaOptionSheetMediaListVideoDownloaderImplDownloadMethodFingerprint
 import app.crimera.patches.twitter.misc.settings.settingsPatch
 import app.crimera.patches.twitter.utils.Constants.COMPATIBILITY_X
 import app.crimera.patches.twitter.utils.enableSettings
@@ -115,18 +114,9 @@ val downloadPatch =
                 )
             }
 
-            MediaOptionSheetMediaListVideoDownloaderImplDownloadMethodFingerprint.method.apply {
-                val first_if2_loc = instructions.first { it.opcode == Opcode.IF_EQZ }.location.index
-                val r3 = getInstruction(first_if2_loc).registersUsed[0]
-
-                // remove premium restriction
-                addInstructions(
-                    first_if2_loc,
-                    """
-                    const v$r3, true
-                    """.trimIndent(),
-                )
-            }
+            // 舊 mediaoptionssheet 大方法已隨 com.twitter.* 物理移除（12.46.1），
+            // 其 premium 閘門已由上面 n0.i 的 a0.g() hook 覆蓋，可下載判斷由下面
+            // y4/r4/u4 的 h() 覆蓋，immersive 選項由 k8 覆蓋——此段冗餘注入移除。
 
             // force downloadable：三個 s3.h() 實作（video/gif/其他）全部 const true
             listOf(MediaEntityFingerprint, GifMediaEntityFingerprint, AltMediaEntityFingerprint)
