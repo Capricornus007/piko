@@ -2,11 +2,11 @@
 <resources>
     <!-- X 12.17 item counts/order preserved; corresponding labels restored from Twitter 9.98 -->
     <string-array name="account_notif_confirmations">
-        <item>You\'ll get notifications for new Tweets.</item>
-        <item>You\'ll get notifications for new Tweets &amp; replies.</item>
-        <item>You\'ll get notifications for new Subscription Tweets.</item>
-        <item>You\'ll get notifications for new Live video Tweets.</item>
-        <item>You\'ll no longer get notifications for new Tweets.</item>
+        <item>You&apos;ll get notifications for new Tweets.</item>
+        <item>You&apos;ll get notifications for new Tweets &amp; replies.</item>
+        <item>You&apos;ll get notifications for new Subscription Tweets.</item>
+        <item>You&apos;ll get notifications for new Live video Tweets.</item>
+        <item>You&apos;ll no longer get notifications for new Tweets.</item>
     </string-array>
     <string-array name="account_notif_options">
         <item>All Tweets</item>
