@@ -104,10 +104,11 @@ public class Tweet extends Debug {
     }
 
     public String getShortText() throws Exception {
-        // y()Lcom/twitter/model/core/entity/c1;
-        Object tweetObj = super.getMethod("tweetEntityClass");
-        // getText()
-        Object data = super.getMethod(tweetObj, "getText");
+        // 12.46.1: CanonicalPost (com.x.models.u0) exposes getText()->String directly;
+        // the old intermediate text-object class is gone. The patch injects the real
+        // getter name ("getText") into the sentinel below, and we call it straight on
+        // the tweet object (one-stage) instead of getText-on-a-text-object (two-stage).
+        Object data = super.getMethod("tweetEntityClass");
         return (String) data;
     }
 

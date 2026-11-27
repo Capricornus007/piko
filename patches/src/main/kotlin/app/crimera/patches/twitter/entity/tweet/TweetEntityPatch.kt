@@ -47,12 +47,10 @@ val tweetEntityPatch =
 
             val tweetObjectMethods = TweetObjectFingerprint.classDef.methods
 
-            val getTextObjectFromTweetObjectMethodName =
-                tweetObjectMethods
-                    .first {
-                        it.returnType ==
-                            GetTextFromTextObjectFingerprint.classDef.type
-                    }.name
+            // 12.46.1: CanonicalPost (u0) has getText()->String directly; there is no
+            // intermediate text-object class anymore. Inject the (unobfuscated) getter
+            // name so Tweet.getShortText() can call it straight on the tweet object.
+            val getTextObjectFromTweetObjectMethodName = GetTextFromTextObjectFingerprint.method.name
             TweetShortTextFingerprint.changeFirstString(getTextObjectFromTweetObjectMethodName)
 
             val getTweetUserIdMethod =
