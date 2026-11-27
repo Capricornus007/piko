@@ -125,11 +125,15 @@ val bringBackTwitterPatch =
             }
 
             // Splashscreen to blue
+            // 12.46.1：舊的 Theme.LaunchScreen 已被移除，Manifest 的 MainActivity
+            // 現在用 @style/Theme.X.SplashScreen（jadx res/values/styles.xml:5201 實錘，
+            // 其 <item name="windowSplashScreenBackground">@color/appBackground</item>
+            // 在 5205）；改寫該 style 才能把啟動畫面背景換成 twitter blue。
             document("res/values/styles.xml").use { document ->
                 val styleElement =
                     document.childNodes.findElementByAttributeValueOrThrow(
                         "name",
-                        "Theme.LaunchScreen",
+                        "Theme.X.SplashScreen",
                     )
 
                 val itemElement =
