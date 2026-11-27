@@ -1,3 +1,9 @@
+## [3.12.8](https://github.com/Capricornus007/piko/compare/v3.12.7...v3.12.8) (2026-11-27)
+
+### 🐛 Bug Fixes
+
+* **x46:** 補完剩餘四個 patch——HideFAB 改 Compose FAB 錨點、Download 移除已物理刪除的 mediaoptionssheet、DisableAutoScroll 改 cold-start/resume 雙 hook、TweetEntity/TweetInfo 改 u0 語言欄位反射 ([f35352d](https://github.com/Capricornus007/piko/commit/f35352db3692865547da2e820ac26edcc30e6163))
+
 ## [3.12.7](https://github.com/Capricornus007/piko/compare/v3.12.6...v3.12.7) (2026-11-27)
 
 ### 🐛 Bug Fixes
