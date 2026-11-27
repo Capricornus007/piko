@@ -1,3 +1,10 @@
+## [3.12.3](https://github.com/Capricornus007/piko/compare/v3.12.2...v3.12.3) (2026-11-27)
+
+### 🐛 Bug Fixes
+
+* **x46:** EnableForcePip 從失配改為 UI 閘門換錨（PiP 未被移除） ([a732389](https://github.com/Capricornus007/piko/commit/a732389608fda8bbdcf387471ad3838f7e147589)), references [#0](https://github.com/Capricornus007/piko/issues/0)
+* **x46:** HideLiveThreads 從 no-op 恢復——Fleets 改名 Fleetline/Spaces bar 換錨 ([ae2b68c](https://github.com/Capricornus007/piko/commit/ae2b68c76818dac609041ca030913e90a0466a90))
+
 ## [3.12.2](https://github.com/Capricornus007/piko/compare/v3.12.1...v3.12.2) (2026-11-26)
 
 ### 🐛 Bug Fixes
