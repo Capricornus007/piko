@@ -105,4 +105,3 @@ jobs:
         with:
           subject-name: 'Piko Patches ${{ steps.release.outputs.new_release_git_tag }}'
           subject-path: patches/build/libs/patches-*.mpp
-# CI Actions 暫時無法 dispatch；此提交驗證 push 觸發路徑。
