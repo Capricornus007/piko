@@ -87,8 +87,10 @@ public class Tweet extends Debug {
     }
 
     public TweetInfo getTweetInfo() throws Exception {
-        Object data = super.getField("tweetInfo");
-        return new TweetInfo(data);
+        // 2026-11-27：12.46.1 已移除舊 TweetInfo object（com.twitter.database.legacy.tdbh），
+        // language 直接是 CanonicalPost(u0) 自己的 String field。改為直接把 u0 包進
+        // TweetInfo，getLang() 從 u0 讀由 patch 動態注入的混淆字段名（sentinel "tweetLang"）。
+        return new TweetInfo(this.obj);
     }
 
     public String getTweetLang() throws Exception {

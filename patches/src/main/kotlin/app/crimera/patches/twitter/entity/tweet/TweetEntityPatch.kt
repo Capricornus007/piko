@@ -6,13 +6,9 @@
 
 package app.crimera.patches.twitter.entity.tweet
 
-import app.crimera.patches.twitter.entity.tweetInfo.TweetInfoObjectFingerprint
 import app.crimera.utils.changeFirstString
 import app.crimera.utils.changeString
 import app.crimera.utils.changeStringAt
-import app.crimera.utils.extensionToClassName
-import app.crimera.utils.fieldExtractor
-import app.morphe.patcher.extensions.InstructionExtensions.getInstruction
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.patch
 import app.morphe.patcher.util.getReference
@@ -94,18 +90,11 @@ val tweetEntityPatch =
                     .name
             TweetLongTextFingerprint.changeStringAt(1, longTextField)
 
-            TweetInfoObjectFingerprint.apply {
-                val langStrIndex = stringMatches[1].index
-                method.apply {
-                    val className = extensionToClassName(getInstruction(langStrIndex + 1).fieldExtractor().definingClass)
-                    val infoField =
-                        TweetObjectFingerprint.classDef.fields
-                            .first {
-                                it.type == className
-                            }.name
-
-                    TweetInfoFingerprint.changeFirstString(infoField)
-                }
-            }
+            // 2026-11-27：舊的 com.twitter.database.legacy.tdbh(TweetInfo object) 與
+            // supplemental_language 欄位在 12.46.1 已物理移除。language 現在直接是
+            // CanonicalPost(u0) 自己的 String field，改由 tweetInfoEntityPatch 從
+            // u0.toString() 的 ", language=" 錨點動態抽出並寫入 TweetInfo.getLang()。
+            // 這裡舊的 first { it.type == className } 鏈在 12.46.1 必然第一個就失敗，
+            // 故整段移除。
         }
     }
