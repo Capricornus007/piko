@@ -13,30 +13,31 @@ import app.crimera.patches.twitter.utils.enableSettings
 import app.morphe.patcher.Fingerprint
 import app.morphe.patcher.extensions.InstructionExtensions.addInstruction
 import app.morphe.patcher.extensions.InstructionExtensions.instructions
+import app.morphe.patcher.extensions.InstructionExtensions.replaceInstruction
 import app.morphe.patcher.patch.patch
 import com.android.tools.smali.dexlib2.Opcode
 
-// [12.46.1 失配] feature flag "android_immersive_media_player_native_pip_enabled" 已自
-// APK 完全移除（dex 二進制 grep 確認，x_android_* 新命名體系中也無 pip/immersive player
-// 相關 flag），找不到等價字串錨點。
-// 新版 PiP 行為：MainActivity.java:86-90 僅依系統功能 android.software.picture_in_picture
-// 決定使用 DefaultPipModeController（com/x/media/playback/pip/d.java）或 no-op 控制器；
-// 關閉 App 自動進入 PiP 改由 d.java:202 的 setAutoEnterEnabled(oVar != null) 控制，
-// 用戶端已無 feature flag 閘門（功能形同預設開啟）。若仍需強制開啟，須改為對
-// d.h()（回傳 PictureInPictureParams）注入 setAutoEnterEnabled(true)，屬注入邏輯重寫。
-private object EnableForcePip1Fingerprint : Fingerprint(
-    strings =
-        listOf(
-            "impl",
-            "unsupported",
-            "android_immersive_media_player_native_pip_enabled",
-        ),
+// 2026-11-27 覆核（/tmp/recheck_enableforcepip.md）：PiP 未被物理移除，
+// 底層 com/x/media/playback/pip/ 15 個 class 完整。舊 flag 消失但失效的是
+// UI 閘門：com/x/video/tab/n0.v() 組裝 ShowVideoOptions 時把第 2 個 Z
+// (isPictureInPictureAvailable) 寫死 false（smali index 53 const/4 v2 #0），
+// 下游 ha.m() 讀 m9.b=false 就不加入 j9.PictureInPicture 選項。
+// 改為用偏好值覆蓋該 boolean，保留舊「偏好開→強制 PiP」語意。
+private object EnableForcePipFingerprint : Fingerprint(
+    definingClass = "Lcom/x/video/tab/n0;",
+    name = "v",
+    parameters = listOf("Lcom/x/media/playback/settings/persistent/h;"),
+    returnType = "Lcom/x/video/tab/m9;",
 )
 
-// [12.46.1 失配] 同上，flag 字串已不存在。
-private object EnableForcePip2Fingerprint : Fingerprint(
-    returnType = "Ljava/lang/Object",
-    strings = listOf("android_immersive_media_player_native_pip_enabled"),
+// 自動進入 PiP：d.h() 的 setAutoEnterEnabled 原本吃 v4（o==null 時為 0）。
+// v5 自 index 19 const/4 #1 起未被改寫（index 152 也用 v5），把引數 v4→v5
+// 即 setAutoEnterEnabled(true)，指令長度不變、不破壞 jump offset。
+private object EnableForcePipAutoEnterFingerprint : Fingerprint(
+    definingClass = "Lcom/x/media/playback/pip/d;",
+    name = "h",
+    parameters = listOf("Lcom/x/media/playback/pip/o;"),
+    returnType = "Landroid/app/PictureInPictureParams;",
 )
 
 @Suppress("unused")
@@ -51,19 +52,29 @@ val enableForcePipPatch =
         execute {
             val PREF = "invoke-static {}, $PREF_DESCRIPTOR;->enableForcePip()Z"
 
-            val methods1 = EnableForcePip1Fingerprint.method
-            val first_if_nez_loc =
-                methods1.instructions
-                    .first { it.opcode == Opcode.IF_NEZ }
-                    .location.index
-            methods1.addInstruction(first_if_nez_loc - 1, PREF)
+            // (1) UI 閘門：n0.v 的 index 53 = const/4 v2 #0（寫死的 false），
+            //     後面注入偏好值：開→v2=1 顯示 PiP 選項，關→0 維持原樣。
+            //     v2 在 53 與建構子 56 之間未被改寫，注入安全。
+            val ui = EnableForcePipFingerprint.method
+            check(ui.instructions[53].opcode == Opcode.CONST_4) {
+                "EnableForcePip: n0.v 第 53 條指令不再是 const/4，請重新採礦"
+            }
+            ui.addInstruction(54, PREF)
+            ui.addInstruction(55, "move-result v2")
 
-            val methods2 = EnableForcePip2Fingerprint.method
-            val first_sget_loc =
-                methods2.instructions
-                    .first { it.opcode == Opcode.SGET_OBJECT }
-                    .location.index
-            methods2.addInstruction(first_sget_loc + 2, PREF)
+            // (2) 自動進入：d.h 的 index 151 = setAutoEnterEnabled(v4)，
+            //     換成 v5（恆為 1）force true。不改 x00.invoke 的
+            //     hasSystemFeature——那是系統能力檢查，force 會在非 PiP 裝置出事。
+            val auto = EnableForcePipAutoEnterFingerprint.method
+            check(auto.instructions[151].opcode == Opcode.INVOKE_VIRTUAL) {
+                "EnableForcePip: d.h 第 151 條指令不再是 invoke-virtual，請重新採礦"
+            }
+            auto.replaceInstruction(
+                151,
+                "invoke-virtual {v0, v5}, " +
+                    "Landroid/app/PictureInPictureParams\$Builder;->setAutoEnterEnabled(Z)" +
+                    "Landroid/app/PictureInPictureParams\$Builder;",
+            )
 
             enableSettings("enableForcePip")
         }
