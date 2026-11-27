@@ -1,7 +1,7 @@
 {
-  "created_at": "2026-11-27T12:14:11",
-  "description": "## [3.12.6](https://github.com/Capricornus007/piko/compare/v3.12.5...v3.12.6) (2026-11-27)\n\n### 🐛 Bug Fixes\n\n* **x46:** TweetEntity getText 改走 u0(CanonicalPost) 直接 getter ([f099a0e](https://github.com/Capricornus007/piko/commit/f099a0ed6c5c9f109278f84cdf01731830c0c34c))",
-  "download_url": "https://github.com/Capricornus007/piko/releases/download/v3.12.6/patches-3.12.6.mpp",
-  "signature_download_url": "https://github.com/Capricornus007/piko/releases/download/v3.12.6/patches-3.12.6.mpp.asc",
-  "version": "3.12.6"
+  "created_at": "2026-11-27T12:18:23",
+  "description": "## [3.12.7](https://github.com/Capricornus007/piko/compare/v3.12.6...v3.12.7) (2026-11-27)\n\n### 🐛 Bug Fixes\n\n* **x46:** ShowSensitiveMedia 改鎖 MediaVisibilityResults(h) 建構子欄位寫入 ([31aa6e9](https://github.com/Capricornus007/piko/commit/31aa6e94adb51f5a03d7ca8830ec822b3db0c8ee))",
+  "download_url": "https://github.com/Capricornus007/piko/releases/download/v3.12.7/patches-3.12.7.mpp",
+  "signature_download_url": "https://github.com/Capricornus007/piko/releases/download/v3.12.7/patches-3.12.7.mpp.asc",
+  "version": "3.12.7"
 }
