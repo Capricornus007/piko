@@ -448,4 +448,35 @@ It's recommended to read this before using this feature. It includes some import
 
     <string name="piko_ok">OK</string>
     <string name="piko_cancel">Cancel</string>
+
+    <!--
+      2026-11-28：X 12.46.1 重構把下列 app 原本的 string 資源改名或移除，
+      但 values/twitter/arrays.xml 的 piko_array_* 仍以舊名 @string/ 參考。
+      reandroid 的 XmlCoder.encodeArray() 在 encodeReference() 解析不到資源時
+      直接拋 "Unexpected array value"，整個APK重建失敗（morphe twitter job）。
+      這裡在基礎 locale 補回同名資源，讓陣列參考永遠可解析；各語言的在地化
+      仍由 X app 自己的 values-<locale>/strings.xml 提供，功能與 i18n 都不丟。
+    -->
+    <string name="copy_tweet_link">Copy link to post</string>
+    <string name="detail_filter_trending_title">Trending</string>
+    <string name="drafts_empty_video">Video</string>
+    <string name="drawer_birdwatch_title">Community Notes</string>
+    <string name="drawer_direct_messages_title">Direct Messages</string>
+    <string name="drawer_notifications_title">Notifications</string>
+    <string name="drawer_professional_tools_header_title">Professional Tools</string>
+    <string name="guide_tab_title_entertainment">Entertainment</string>
+    <string name="guide_tab_title_for_you">For you</string>
+    <string name="guide_tab_title_fun">Fun</string>
+    <string name="guide_tab_title_news">News</string>
+    <string name="guide_tab_title_sports">Sports</string>
+    <string name="guide_tab_title_trending">Trending</string>
+    <string name="label_chat">Chat</string>
+    <string name="profile_followers">Followers</string>
+    <string name="profile_tab_title_timeline_super_follow_tweets">Super Follows</string>
+    <string name="profile_tab_title_timeline_tweets_and_replies_sentence_case">Posts and replies</string>
+    <string name="search_filter_photos">Photos</string>
+    <string name="search_filter_videos">Videos</string>
+    <string name="spaces_grid_tab">Spaces</string>
+    <string name="subscriptions_drawer_menu_title">Subscriptions</string>
+    <string name="theme_dim_title">Dim</string>
 </resources>

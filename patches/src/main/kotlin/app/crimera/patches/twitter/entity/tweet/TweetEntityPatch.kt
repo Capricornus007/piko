@@ -12,7 +12,6 @@ import app.crimera.utils.changeStringAt
 import app.morphe.patcher.patch.PatchException
 import app.morphe.patcher.patch.patch
 import app.morphe.patcher.util.getReference
-import com.android.tools.smali.dexlib2.Opcode
 import com.android.tools.smali.dexlib2.iface.reference.MethodReference
 
 val tweetEntityPatch =
@@ -62,21 +61,21 @@ val tweetEntityPatch =
                     .name
             TweetUserIdFingerprint.changeFirstString(getTweetUserIdMethod)
 
+            // 12.46.1：舊的「4 個 IGET_OBJECT + RETURN_OBJECT」accessor 形態已物理消失
+            // （全 dex 掃描零命中）。新的 media accessor 是 u0.g()，直接回傳
+            // Lkotlinx/collections/immutable/c;——它是個 interface，继承了
+            // Ljava/util/List;，所以 extension 端可以直接 cast 成 List，不必再走
+            // 舊的「二段式 superclass + extMediaList 欄位」反射。
+            // 這裡仍把方法名注入 sentinel：extension 的 getExtendedMediaEntities()
+            // 是靠 super.getMethod("mediaMethod") 反射呼叫的，字串槽位必須保留。
             val getMediaObjectMethod =
-                tweetObjectMethods.firstOrNull { methodDef ->
-                    methodDef.implementation
-                        ?.instructions
-                        ?.map { it.opcode }
-                        ?.toList() ==
-                        listOf(
-                            Opcode.IGET_OBJECT,
-                            Opcode.IGET_OBJECT,
-                            Opcode.IGET_OBJECT,
-                            Opcode.IGET_OBJECT,
-                            Opcode.RETURN_OBJECT,
-                        )
-                } ?: throw PatchException("getMediaObject not found")
-            TweetExtMediaEntitiesListFingerprint.changeFirstString(getMediaObjectMethod.name)
+                tweetObjectMethods
+                    .firstOrNull { it.returnType == "Lkotlinx/collections/immutable/c;" }
+                    ?.name
+                    ?: throw PatchException(
+                        "getMediaObject not found：u0 上沒有回傳 Lkotlinx/collections/immutable/c; 的 accessor",
+                    )
+            TweetExtMediaEntitiesListFingerprint.changeFirstString(getMediaObjectMethod)
 
             // 12.46.1: g0(PostEntityList) 有 7 個 List 欄位，media 是第 3 個
             // （Fingerprints.kt 註明）。舊的 first { contains("List") } 會選到
